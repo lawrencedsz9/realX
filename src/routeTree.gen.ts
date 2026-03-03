@@ -12,12 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as AdminTransactionsRouteImport } from './routes/admin/transactions'
 import { Route as vendorPanelVendorRouteImport } from './routes/(vendor-panel)/_vendor'
 import { Route as authUnauthorizedRouteImport } from './routes/(auth)/unauthorized'
 import { Route as authSignupRouteImport } from './routes/(auth)/signup'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as AdminVendorsIndexRouteImport } from './routes/admin/vendors/index'
+import { Route as AdminTransactionsIndexRouteImport } from './routes/admin/transactions/index'
 import { Route as AdminStudentsIndexRouteImport } from './routes/admin/students/index'
 import { Route as AdminCmsIndexRouteImport } from './routes/admin/cms/index'
 import { Route as vendorPanelVendorPinRouteImport } from './routes/(vendor-panel)/_vendor.pin'
@@ -48,13 +48,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminTransactionsRoute = AdminTransactionsRouteImport.update({
-  id: '/transactions',
-  path: '/transactions',
-  getParentRoute: () => AdminRoute,
-} as any).lazy(() =>
-  import('./routes/admin/transactions.lazy').then((d) => d.Route),
-)
 const vendorPanelVendorRoute = vendorPanelVendorRouteImport.update({
   id: '/(vendor-panel)/_vendor',
   getParentRoute: () => rootRouteImport,
@@ -84,6 +77,13 @@ const AdminVendorsIndexRoute = AdminVendorsIndexRouteImport.update({
   getParentRoute: () => AdminRoute,
 } as any).lazy(() =>
   import('./routes/admin/vendors/index.lazy').then((d) => d.Route),
+)
+const AdminTransactionsIndexRoute = AdminTransactionsIndexRouteImport.update({
+  id: '/transactions/',
+  path: '/transactions/',
+  getParentRoute: () => AdminRoute,
+} as any).lazy(() =>
+  import('./routes/admin/transactions/index.lazy').then((d) => d.Route),
 )
 const AdminStudentsIndexRoute = AdminStudentsIndexRouteImport.update({
   id: '/students/',
@@ -174,13 +174,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
-  '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/contact-us': typeof vendorPanelVendorContactUsRoute
   '/dashboard': typeof vendorPanelVendorDashboardRoute
   '/pin': typeof vendorPanelVendorPinRoute
   '/admin/cms': typeof AdminCmsIndexRoute
   '/admin/students': typeof AdminStudentsIndexRoute
+  '/admin/transactions': typeof AdminTransactionsIndexRoute
   '/admin/vendors': typeof AdminVendorsIndexRoute
   '/admin/cms/banners/add': typeof AdminCmsBannersAddRoute
   '/admin/cms/categories/$categoryId': typeof AdminCmsCategoriesCategoryIdRoute
@@ -197,13 +197,13 @@ export interface FileRoutesByTo {
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
-  '/admin/transactions': typeof AdminTransactionsRoute
   '/admin': typeof AdminIndexRoute
   '/contact-us': typeof vendorPanelVendorContactUsRoute
   '/dashboard': typeof vendorPanelVendorDashboardRoute
   '/pin': typeof vendorPanelVendorPinRoute
   '/admin/cms': typeof AdminCmsIndexRoute
   '/admin/students': typeof AdminStudentsIndexRoute
+  '/admin/transactions': typeof AdminTransactionsIndexRoute
   '/admin/vendors': typeof AdminVendorsIndexRoute
   '/admin/cms/banners/add': typeof AdminCmsBannersAddRoute
   '/admin/cms/categories/$categoryId': typeof AdminCmsCategoriesCategoryIdRoute
@@ -222,13 +222,13 @@ export interface FileRoutesById {
   '/(auth)/signup': typeof authSignupRoute
   '/(auth)/unauthorized': typeof authUnauthorizedRoute
   '/(vendor-panel)/_vendor': typeof vendorPanelVendorRouteWithChildren
-  '/admin/transactions': typeof AdminTransactionsRoute
   '/admin/': typeof AdminIndexRoute
   '/(vendor-panel)/_vendor/contact-us': typeof vendorPanelVendorContactUsRoute
   '/(vendor-panel)/_vendor/dashboard': typeof vendorPanelVendorDashboardRoute
   '/(vendor-panel)/_vendor/pin': typeof vendorPanelVendorPinRoute
   '/admin/cms/': typeof AdminCmsIndexRoute
   '/admin/students/': typeof AdminStudentsIndexRoute
+  '/admin/transactions/': typeof AdminTransactionsIndexRoute
   '/admin/vendors/': typeof AdminVendorsIndexRoute
   '/admin/cms/banners/add': typeof AdminCmsBannersAddRoute
   '/admin/cms/categories/$categoryId': typeof AdminCmsCategoriesCategoryIdRoute
@@ -248,13 +248,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/unauthorized'
-    | '/admin/transactions'
     | '/admin/'
     | '/contact-us'
     | '/dashboard'
     | '/pin'
     | '/admin/cms'
     | '/admin/students'
+    | '/admin/transactions'
     | '/admin/vendors'
     | '/admin/cms/banners/add'
     | '/admin/cms/categories/$categoryId'
@@ -271,13 +271,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/unauthorized'
-    | '/admin/transactions'
     | '/admin'
     | '/contact-us'
     | '/dashboard'
     | '/pin'
     | '/admin/cms'
     | '/admin/students'
+    | '/admin/transactions'
     | '/admin/vendors'
     | '/admin/cms/banners/add'
     | '/admin/cms/categories/$categoryId'
@@ -295,13 +295,13 @@ export interface FileRouteTypes {
     | '/(auth)/signup'
     | '/(auth)/unauthorized'
     | '/(vendor-panel)/_vendor'
-    | '/admin/transactions'
     | '/admin/'
     | '/(vendor-panel)/_vendor/contact-us'
     | '/(vendor-panel)/_vendor/dashboard'
     | '/(vendor-panel)/_vendor/pin'
     | '/admin/cms/'
     | '/admin/students/'
+    | '/admin/transactions/'
     | '/admin/vendors/'
     | '/admin/cms/banners/add'
     | '/admin/cms/categories/$categoryId'
@@ -346,13 +346,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/transactions': {
-      id: '/admin/transactions'
-      path: '/transactions'
-      fullPath: '/admin/transactions'
-      preLoaderRoute: typeof AdminTransactionsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/(vendor-panel)/_vendor': {
       id: '/(vendor-panel)/_vendor'
       path: ''
@@ -386,6 +379,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/admin/vendors'
       preLoaderRoute: typeof AdminVendorsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/transactions/': {
+      id: '/admin/transactions/'
+      path: '/transactions'
+      fullPath: '/admin/transactions'
+      preLoaderRoute: typeof AdminTransactionsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/students/': {
@@ -511,10 +511,10 @@ const AdminVendorsVendorIdSettingsRouteWithChildren =
   )
 
 interface AdminRouteChildren {
-  AdminTransactionsRoute: typeof AdminTransactionsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCmsIndexRoute: typeof AdminCmsIndexRoute
   AdminStudentsIndexRoute: typeof AdminStudentsIndexRoute
+  AdminTransactionsIndexRoute: typeof AdminTransactionsIndexRoute
   AdminVendorsIndexRoute: typeof AdminVendorsIndexRoute
   AdminCmsBannersAddRoute: typeof AdminCmsBannersAddRoute
   AdminCmsCategoriesCategoryIdRoute: typeof AdminCmsCategoriesCategoryIdRoute
@@ -525,10 +525,10 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminTransactionsRoute: AdminTransactionsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCmsIndexRoute: AdminCmsIndexRoute,
   AdminStudentsIndexRoute: AdminStudentsIndexRoute,
+  AdminTransactionsIndexRoute: AdminTransactionsIndexRoute,
   AdminVendorsIndexRoute: AdminVendorsIndexRoute,
   AdminCmsBannersAddRoute: AdminCmsBannersAddRoute,
   AdminCmsCategoriesCategoryIdRoute: AdminCmsCategoriesCategoryIdRoute,
