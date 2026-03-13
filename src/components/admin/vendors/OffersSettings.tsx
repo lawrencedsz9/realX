@@ -18,9 +18,10 @@ import { offersQueryOptions, type Offer } from '@/queries'
 interface OffersSettingsProps {
     vendorId: string | undefined
     vendorName?: string
+    vendorProfilePicture?: string
 }
 
-export function OffersSettings({ vendorId, vendorName }: OffersSettingsProps) {
+export function OffersSettings({ vendorId, vendorName, vendorProfilePicture }: OffersSettingsProps) {
     const queryClient = useQueryClient()
     const [isCreating, setIsCreating] = useState(false)
     const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
@@ -98,6 +99,9 @@ export function OffersSettings({ vendorId, vendorName }: OffersSettingsProps) {
                 const docRef = doc(db, 'offers', editingOffer.id)
                 await updateDoc(docRef, {
                     ...data,
+                    vendorRef: doc(db, 'vendors', vendorId || editingOffer.vendorId),
+                    vendorName: vendorName || '',
+                    vendorProfilePicture: vendorProfilePicture || '',
                     updatedAt: serverTimestamp()
                 })
             } else {
@@ -106,6 +110,9 @@ export function OffersSettings({ vendorId, vendorName }: OffersSettingsProps) {
                 await addDoc(collection(db, 'offers'), {
                     ...data,
                     vendorId,
+                    vendorRef: doc(db, 'vendors', vendorId),
+                    vendorName: vendorName || '',
+                    vendorProfilePicture: vendorProfilePicture || '',
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()
                 })

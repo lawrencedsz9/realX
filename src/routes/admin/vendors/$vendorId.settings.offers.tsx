@@ -21,7 +21,11 @@ function OffersSettingsComponent() {
 
     return (
         <div className="pt-6">
-            <OffersSettings vendorId={vendorId} vendorName={vendor?.name || ''} />
+            <OffersSettings
+                vendorId={vendorId}
+                vendorName={vendor?.name || ''}
+                vendorProfilePicture={vendor?.profilePicture || ''}
+            />
         </div>
     )
 }
