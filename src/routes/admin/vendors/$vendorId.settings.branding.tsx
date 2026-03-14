@@ -36,8 +36,6 @@ export interface Vendor {
     isFeatured?: boolean
     shortDescriptionEn?: string
     shortDescriptionAr?: string
-    keywordsEn?: string[]
-    keywordsAr?: string[]
     tagsEn?: string[]
     tagsAr?: string[]
     profilePicture?: string

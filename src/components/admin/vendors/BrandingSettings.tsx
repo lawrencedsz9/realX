@@ -1,9 +1,9 @@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
+
 import { Button } from "@/components/ui/button"
-import { Upload, X, Phone, Loader2, CreditCard } from "lucide-react"
+import { Upload, Phone, Loader2, CreditCard } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useRef } from "react"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
@@ -16,8 +16,6 @@ interface BrandingSettingsProps {
 }
 
 export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSettingsProps) {
-    const [keywordInputEn, setKeywordInputEn] = useState("")
-    const [keywordInputAr, setKeywordInputAr] = useState("")
     const [uploadingProfile, setUploadingProfile] = useState(false)
     const [uploadingCover, setUploadingCover] = useState(false)
     const profileInputRef = useRef<HTMLInputElement>(null)
@@ -48,41 +46,7 @@ export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSe
         }
     }
 
-    const handleAddKeywordEn = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && keywordInputEn.trim()) {
-            e.preventDefault()
-            const keywords = formData.keywordsEn || []
-            if (!keywords.includes(keywordInputEn.trim())) {
-                setFormData({ ...formData, keywordsEn: [...keywords, keywordInputEn.trim()] })
-            }
-            setKeywordInputEn("")
-        }
-    }
 
-    const handleRemoveKeywordEn = (keyword: string) => {
-        setFormData({
-            ...formData,
-            keywordsEn: (formData.keywordsEn || []).filter((k: string) => k !== keyword)
-        })
-    }
-
-    const handleAddKeywordAr = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && keywordInputAr.trim()) {
-            e.preventDefault()
-            const keywords = formData.keywordsAr || []
-            if (!keywords.includes(keywordInputAr.trim())) {
-                setFormData({ ...formData, keywordsAr: [...keywords, keywordInputAr.trim()] })
-            }
-            setKeywordInputAr("")
-        }
-    }
-
-    const handleRemoveKeywordAr = (keyword: string) => {
-        setFormData({
-            ...formData,
-            keywordsAr: (formData.keywordsAr || []).filter((k: string) => k !== keyword)
-        })
-    }
 
 
     return (
@@ -249,62 +213,7 @@ export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSe
                     />
                 </div>
 
-                {/* Keywords */}
-                <div className="space-y-4">
-                    <Label className="text-base font-semibold text-slate-700">Keywords (For Search & Filtering)</Label>
-                    <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl min-h-[56px] border border-transparent focus-within:ring-1 focus-within:ring-blue-400 transition-all">
-                        {(formData.keywordsEn || []).map((keyword: string) => (
-                            <Badge key={keyword} variant="secondary" className="gap-2 bg-white hover:bg-white text-slate-600 py-1.5 px-3 rounded-xl border border-slate-100 shadow-sm text-xs font-medium">
-                                {keyword}
-                                <span
-                                    className="cursor-pointer text-red-500 hover:text-red-600 transition-colors pointer-events-auto"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleRemoveKeywordEn(keyword);
-                                    }}
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </span>
-                            </Badge>
-                        ))}
-                        <input
-                            className="flex-1 bg-transparent border-none outline-none text-sm min-w-[120px] px-2 text-slate-600 placeholder:text-slate-400"
-                            placeholder="Add keyword..."
-                            value={keywordInputEn}
-                            onChange={(e) => setKeywordInputEn(e.target.value)}
-                            onKeyDown={handleAddKeywordEn}
-                        />
-                    </div>
-                </div>
 
-                <div className="space-y-4">
-                    <Label className="text-base font-semibold text-slate-700">Keywords (Arabic)</Label>
-                    <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl min-h-[56px] border border-transparent focus-within:ring-1 focus-within:ring-blue-400 transition-all" dir="rtl">
-                        {(formData.keywordsAr || []).map((keyword: string) => (
-                            <Badge key={keyword} variant="secondary" className="gap-2 bg-white hover:bg-white text-slate-600 py-1.5 px-3 rounded-xl border border-slate-100 shadow-sm text-xs font-medium">
-                                {keyword}
-                                <span
-                                    className="cursor-pointer text-red-500 hover:text-red-600 transition-colors pointer-events-auto"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleRemoveKeywordAr(keyword);
-                                    }}
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </span>
-                            </Badge>
-                        ))}
-                        <input
-                            className="flex-1 bg-transparent border-none outline-none text-sm min-w-[120px] px-2 text-slate-600 placeholder:text-slate-400"
-                            placeholder="اضافة كلمة..."
-                            value={keywordInputAr}
-                            onChange={(e) => setKeywordInputAr(e.target.value)}
-                            onKeyDown={handleAddKeywordAr}
-                        />
-                    </div>
-                </div>
             </div >
 
             {/* XCard & Loyalty */}
