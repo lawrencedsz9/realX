@@ -107,6 +107,7 @@ function RouteComponent() {
                             </TableHead>
                             <TableHead className="text-black font-bold text-base">Date</TableHead>
                             <TableHead className="text-black font-bold text-base">Transaction ID</TableHead>
+                            <TableHead className="text-black font-bold text-base">Type</TableHead>
                             <TableHead className="text-black font-bold text-base">Vendor Name</TableHead>
                             <TableHead className="text-black font-bold text-base text-right pr-8">Total Amount</TableHead>
                         </TableRow>
@@ -135,6 +136,9 @@ function RouteComponent() {
                                     </TableCell>
                                     <TableCell className="font-medium text-gray-900">{tx.date}</TableCell>
                                     <TableCell className="font-medium text-gray-900">{tx.transactionId}</TableCell>
+                                    <TableCell className="font-medium text-gray-900 capitalize">
+                                        {tx.type.replace(/_/g, ' ')}
+                                    </TableCell>
                                     <TableCell className="font-medium text-gray-900">{tx.vendorName}</TableCell>
                                     <TableCell className="text-right font-bold text-gray-900 pr-8">{tx.totalAmount}</TableCell>
                                 </TableRow>

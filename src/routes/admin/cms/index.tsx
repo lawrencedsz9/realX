@@ -21,6 +21,11 @@ const CMS_ITEMS = [
         title: 'Top Brands',
         icon: '🏷️',
         href: '/admin/cms/brands' as const,
+    },
+    {
+        title: 'Trending Offers',
+        icon: '🔥',
+        href: '/admin/cms/trending-offers' as const,
     }
 ]
 

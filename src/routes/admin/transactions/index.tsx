@@ -25,6 +25,7 @@ export interface Transaction {
     transactionId: string
     vendorName: string
     totalAmount: string
+    type: string
 }
 
 export async function fetchTransactions(page: number, pageSize: number) {
@@ -36,7 +37,7 @@ export async function fetchTransactions(page: number, pageSize: number) {
 
     const q = query(
         collRef,
-        orderBy('date', 'desc'),
+        orderBy('createdAt', 'desc'),
         limit(page * pageSize)
     )
 
@@ -51,9 +52,15 @@ export async function fetchTransactions(page: number, pageSize: number) {
         // fallback to some text if missing
         
         let formattedDate = ''
-        if (data.date) {
+        if (data.createdAt) {
+            if (typeof data.createdAt === 'string') {
+                formattedDate = new Date(data.createdAt).toLocaleString()
+            } else if (data.createdAt.toDate) {
+                formattedDate = data.createdAt.toDate().toLocaleString()
+            }
+        } else if (data.date) {
             if (typeof data.date === 'string') {
-                formattedDate = data.date
+                formattedDate = new Date(data.date).toLocaleString()
             } else if (data.date.toDate) {
                 formattedDate = data.date.toDate().toLocaleString()
             }
@@ -62,9 +69,10 @@ export async function fetchTransactions(page: number, pageSize: number) {
         return {
             id,
             date: formattedDate || 'Unknown Date',
-            transactionId: data.transactionId || id,
+            transactionId: data.pin || id,
             vendorName: data.vendorName || 'Unknown Vendor',
-            totalAmount: data.totalAmount?.toString() || data.totalBill?.toString() || 'QAR 0',
+            totalAmount: data.totalAmount ? `QAR ${data.totalAmount}` : 'QAR 0',
+            type: data.type || 'N/A',
         } as Transaction
     }))
 
