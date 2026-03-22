@@ -22,7 +22,6 @@ export const Route = createFileRoute('/admin/vendors/')({
 export interface Vendor {
     id: string
     name: string
-    status: 'Active' | 'Inactive'
     contact: string
     pin: string
     profilePicture?: string
@@ -58,7 +57,6 @@ export async function fetchVendors(page: number, pageSize: number) {
         return {
             id: vendorId,
             name: data.name || 'Unnamed Vendor',
-            status: data.status ? ('Active' as const) : ('Inactive' as const),
             contact: data.phoneNumber?.toString() || data.contact || '',
             pin: data.pin || '----',
             profilePicture: data.profilePicture || '',

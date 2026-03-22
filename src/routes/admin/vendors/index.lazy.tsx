@@ -203,7 +203,6 @@ function RouteComponent() {
                                 <Checkbox />
                             </TableHead>
                             <TableHead className="text-black font-bold text-base">Brand Name</TableHead>
-                            <TableHead className="text-black font-bold text-base">Status</TableHead>
                             <TableHead className="text-black font-bold text-base">Contact Info</TableHead>
                             <TableHead className="text-black font-bold text-base">Vendor Pin</TableHead>
                             <TableHead className="text-black font-bold text-base">XCard</TableHead>
@@ -213,7 +212,7 @@ function RouteComponent() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10">
+                                <TableCell colSpan={6} className="text-center py-10">
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#18B852] border-t-transparent" />
                                         <p className="text-muted-foreground font-medium">Loading vendors...</p>
@@ -222,7 +221,7 @@ function RouteComponent() {
                             </TableRow>
                         ) : vendorList.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                                     No vendors found.
                                 </TableCell>
                             </TableRow>
@@ -243,11 +242,6 @@ function RouteComponent() {
                                             )}
                                             <span className="font-medium text-base">{vendor.name}</span>
                                         </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className={`font-medium ${vendor.status === 'Active' ? 'text-green-500' : 'text-red-500'}`}>
-                                            {vendor.status}
-                                        </span>
                                     </TableCell>
                                     <TableCell className="font-medium text-gray-900">{vendor.contact}</TableCell>
                                     <TableCell className="font-mono font-medium text-gray-900 tracking-widest">{vendor.pin}</TableCell>

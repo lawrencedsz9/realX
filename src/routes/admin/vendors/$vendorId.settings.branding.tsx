@@ -32,7 +32,6 @@ export interface Vendor {
     email?: string
     phoneNumber?: string
     website?: string
-    status?: string
     isFeatured?: boolean
     shortDescriptionEn?: string
     shortDescriptionAr?: string
