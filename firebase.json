@@ -19,22 +19,30 @@
   ],
   "hosting": {
     "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/node_modules/**"],
     "headers": [
       {
         "source": "/.well-known/apple-app-site-association",
         "headers": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Content-Type", "value": "application/json" }
+        ]
+      },
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          { "key": "Content-Type", "value": "application/json" }
         ]
       }
     ],
     "rewrites": [
+      {
+        "source": "/.well-known/**",
+        "destination": "/.well-known/:splat"
+      },
+      {
+        "source": "/finishSignIn",
+        "destination": "/index.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"
