@@ -32,7 +32,7 @@ import { Label } from '@/components/ui/label'
 import { db, functions } from '@/firebase/config'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { httpsCallable } from 'firebase/functions'
-import { doc, setDoc, updateDoc } from 'firebase/firestore'
+import { doc, setDoc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore'
 import { Switch } from '@/components/ui/switch'
 import { fetchVendors, type Vendor } from './index'
 
@@ -85,11 +85,29 @@ function RouteComponent() {
 
     const toggleXCardMutation = useMutation({
         mutationFn: async ({ vendorId, xcard }: { vendorId: string, xcard: boolean }) => {
-            const docRef = doc(db, 'vendors', vendorId)
-            await updateDoc(docRef, { xcard })
+            const batch = writeBatch(db)
+            
+            // 1. Update the vendor document
+            const vendorRef = doc(db, 'vendors', vendorId)
+            batch.update(vendorRef, { xcard })
+            
+            // 2. Update all associated offers
+            const offersQuery = query(
+                collection(db, 'offers'),
+                where('vendorId', '==', vendorId)
+            )
+            const offersSnapshot = await getDocs(offersQuery)
+            
+            offersSnapshot.forEach((offerDoc) => {
+                batch.update(offerDoc.ref, { xcard })
+            })
+            
+            // 3. Commit the batch
+            await batch.commit()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vendors-list'] })
+            queryClient.invalidateQueries({ queryKey: ['offers'] }) // Invalidate overall offers cache
         }
     })
 
@@ -341,10 +359,10 @@ function RouteComponent() {
             {(hasPrevPage || hasNextPage) && (
                 <div className="flex items-center justify-center gap-4 pt-4">
                     <Link
-                        from="/admin/vendors"
+                        from="/admin/vendors/"
                         search={(prev) => ({
                             ...prev,
-                            page: Math.max(1, page - 1),
+                            page: Math.max(1, (prev.page ?? 1) - 1),
                         })}
                         disabled={!hasPrevPage}
                         className={!hasPrevPage ? 'pointer-events-none opacity-50' : ''}
@@ -364,10 +382,10 @@ function RouteComponent() {
                     </div>
 
                     <Link
-                        from="/admin/vendors"
+                        from="/admin/vendors/"
                         search={(prev) => ({
                             ...prev,
-                            page: page + 1,
+                            page: (prev.page ?? 1) + 1,
                         })}
                         disabled={!hasNextPage}
                         className={!hasNextPage ? 'pointer-events-none opacity-50' : ''}

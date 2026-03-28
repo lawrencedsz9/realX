@@ -60,9 +60,10 @@ interface OffersSettingsProps {
     vendorId: string | undefined
     vendorName?: string
     vendorProfilePicture?: string
+    vendorXCard?: boolean
 }
 
-export function OffersSettings({ vendorId, vendorName, vendorProfilePicture }: OffersSettingsProps) {
+export function OffersSettings({ vendorId, vendorName, vendorProfilePicture, vendorXCard }: OffersSettingsProps) {
     const queryClient = useQueryClient()
     const [isCreating, setIsCreating] = useState(false)
     const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
@@ -162,6 +163,7 @@ export function OffersSettings({ vendorId, vendorName, vendorProfilePicture }: O
                     vendorRef: doc(db, 'vendors', vendorId),
                     vendorName: vendorName || '',
                     vendorProfilePicture: vendorProfilePicture || '',
+                    xcard: vendorXCard || false,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()
                 })

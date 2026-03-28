@@ -25,6 +25,7 @@ function OffersSettingsComponent() {
                 vendorId={vendorId}
                 vendorName={vendor?.name || ''}
                 vendorProfilePicture={vendor?.profilePicture || ''}
+                vendorXCard={vendor?.xcard || false}
             />
         </div>
     )
