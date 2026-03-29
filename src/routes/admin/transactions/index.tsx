@@ -30,6 +30,7 @@ export interface Transaction {
     creatorCashbackAmount?: number
     creatorCode?: string | null
     creatorCodeOwnerId?: string | null
+    creatorUid?: string | null
     discountAmount?: number
     discountType?: string
     discountValue?: number

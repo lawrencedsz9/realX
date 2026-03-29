@@ -1,4 +1,4 @@
-import { createLazyFileRoute, Link, useSearch } from '@tanstack/react-router'
+import { createLazyFileRoute, Link, useSearch, useNavigate } from '@tanstack/react-router'
 import {
     Table,
     TableBody,
@@ -17,18 +17,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Search, Upload, Eye, CreditCard, Tag, User, Receipt } from 'lucide-react'
+import { Search, Upload, Eye } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchTransactions, type Transaction } from './index'
 import { Badge } from '@/components/ui/badge'
-import { useState } from 'react'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import { Separator } from '@/components/ui/separator'
 
 export const Route = createLazyFileRoute('/admin/transactions/')({
     component: RouteComponent,
@@ -36,7 +28,7 @@ export const Route = createLazyFileRoute('/admin/transactions/')({
 
 function RouteComponent() {
     const { page, pageSize } = useSearch({ from: '/admin/transactions/' })
-    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+    const navigate = useNavigate()
 
     const { data, isLoading: isQueryLoading } = useQuery({
         queryKey: ['transactions-list', page, pageSize],
@@ -144,7 +136,7 @@ function RouteComponent() {
                                 <TableRow 
                                     key={tx.id} 
                                     className="h-20 border-b border-gray-100 hover:bg-gray-50/50 cursor-pointer"
-                                    onClick={() => setSelectedTransaction(tx)}
+                                    onClick={() => navigate({ to: '/admin/transactions/$id', params: { id: tx.id } })}
                                 >
                                     <TableCell onClick={(e) => e.stopPropagation()}>
                                         <Checkbox />
@@ -207,7 +199,11 @@ function RouteComponent() {
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
-                                        <Button variant="ghost" size="sm" onClick={() => setSelectedTransaction(tx)}>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => navigate({ to: '/admin/transactions/$id', params: { id: tx.id } })}
+                                        >
                                             <Eye className="h-4 w-4 mr-2" />
                                             Details
                                         </Button>
@@ -265,117 +261,6 @@ function RouteComponent() {
                     </Link>
                 </div>
             )}
-
-            {/* Transaction Details Dialog */}
-            <Dialog open={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Receipt className="h-5 w-5 text-[#18B852]" />
-                            Transaction Details
-                        </DialogTitle>
-                    </DialogHeader>
-                    {selectedTransaction && (
-                        <div className="space-y-6 pt-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground uppercase font-semibold">Transaction ID</p>
-                                    <p className="font-mono text-sm">{selectedTransaction.id}</p>
-                                </div>
-                                <div className="space-y-1 text-right">
-                                    <p className="text-xs text-muted-foreground uppercase font-semibold">Date</p>
-                                    <p className="text-sm">{selectedTransaction.date}</p>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-medium text-gray-900">{selectedTransaction.vendorName}</span>
-                                    </div>
-                                    <Badge 
-                                        className={selectedTransaction.type === 'offer_redemption' ? 'bg-[#18B852]' : 'bg-blue-500'}
-                                    >
-                                        {selectedTransaction.type.replace(/_/g, ' ')}
-                                    </Badge>
-                                </div>
-
-                                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Original Total</span>
-                                        <span>{selectedTransaction.totalAmount}</span>
-                                    </div>
-                                    
-                                    {selectedTransaction.type === 'offer_redemption' && (
-                                        <>
-                                            {selectedTransaction.discountAmount && (
-                                                <div className="flex justify-between text-sm text-red-500">
-                                                    <span>Discount ({selectedTransaction.discountType})</span>
-                                                    <span>-QAR {selectedTransaction.discountAmount}</span>
-                                                </div>
-                                            )}
-                                            <Separator className="my-2" />
-                                            <div className="flex justify-between font-bold">
-                                                <span>Final Amount</span>
-                                                <span>QAR {selectedTransaction.finalAmount}</span>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {selectedTransaction.type === 'giftcard_redemption' && (
-                                        <>
-                                            <div className="flex justify-between text-sm text-blue-500">
-                                                <span>Card Amount Used</span>
-                                                <span>-QAR {selectedTransaction.redemptionCardAmount}</span>
-                                            </div>
-                                            <Separator className="my-2" />
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">Remaining Balance</span>
-                                                <span className="font-medium text-gray-900">QAR {selectedTransaction.remainingAmount}</span>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            {selectedTransaction.type === 'offer_redemption' && (
-                                <div className="space-y-4 border-t pt-4">
-                                    <div className="flex items-center gap-2">
-                                        <Tag className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm font-semibold">Rewards & Cashback</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 bg-green-50/50 p-4 rounded-lg border border-green-100">
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-green-700 uppercase font-semibold">User Cashback</p>
-                                            <p className="font-bold text-green-600">QAR {selectedTransaction.cashbackAmount || 0}</p>
-                                        </div>
-                                        {selectedTransaction.creatorCode && (
-                                            <div className="space-y-1 text-right">
-                                                <p className="text-xs text-orange-700 uppercase font-semibold">Creator Earned</p>
-                                                <p className="font-bold text-orange-600">QAR {selectedTransaction.creatorCashbackAmount || 0}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {selectedTransaction.creatorCode && (
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <User className="h-4 w-4" />
-                                            <span>Used Code: <span className="font-bold text-gray-900">{selectedTransaction.creatorCode}</span></span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="pt-2 text-[10px] text-muted-foreground text-center">
-                                PIN: {selectedTransaction.pin || 'N/A'} • User: {selectedTransaction.userId?.slice(0, 8)}...
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }
