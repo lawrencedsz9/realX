@@ -3,5 +3,23 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
 .env.*
 !.env.example
+
+# Firebase
+.firebase/
+*-debug.log
+.firebaserc
+firebase.json
+realappx-firebase-adminsdk-*.json
+firebaseConfig.ts
+
+# Project specific
+package-lock.json
+src/routeTree.gen.ts
+seed-firestore.js
+clear-firestore.js
+setAdmin.cjs
+.tanstack/
+.sfdx/
