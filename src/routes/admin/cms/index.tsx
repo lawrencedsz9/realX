@@ -26,6 +26,11 @@ const CMS_ITEMS = [
         title: 'Trending Offers',
         icon: '🔥',
         href: '/admin/cms/trending-offers' as const,
+    },
+    {
+        title: 'Universities Management',
+        icon: '🎓',
+        href: '/admin/cms/universities' as const,
     }
 ]
 
