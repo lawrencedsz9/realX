@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as vendorPanelVendorRouteImport } from './routes/(vendor-panel)/_vendor'
 import { Route as authUnauthorizedRouteImport } from './routes/(auth)/unauthorized'
 import { Route as authSignupRouteImport } from './routes/(auth)/signup'
@@ -50,6 +51,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
 const vendorPanelVendorRoute = vendorPanelVendorRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/': typeof AdminIndexRoute
   '/contact-us': typeof vendorPanelVendorContactUsRoute
   '/dashboard': typeof vendorPanelVendorDashboardRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin': typeof AdminIndexRoute
   '/contact-us': typeof vendorPanelVendorContactUsRoute
   '/dashboard': typeof vendorPanelVendorDashboardRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/(auth)/signup': typeof authSignupRoute
   '/(auth)/unauthorized': typeof authUnauthorizedRoute
   '/(vendor-panel)/_vendor': typeof vendorPanelVendorRouteWithChildren
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/': typeof AdminIndexRoute
   '/(vendor-panel)/_vendor/contact-us': typeof vendorPanelVendorContactUsRoute
   '/(vendor-panel)/_vendor/dashboard': typeof vendorPanelVendorDashboardRoute
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/unauthorized'
+    | '/admin/dashboard'
     | '/admin/'
     | '/contact-us'
     | '/dashboard'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/unauthorized'
+    | '/admin/dashboard'
     | '/admin'
     | '/contact-us'
     | '/dashboard'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/(auth)/signup'
     | '/(auth)/unauthorized'
     | '/(vendor-panel)/_vendor'
+    | '/admin/dashboard'
     | '/admin/'
     | '/(vendor-panel)/_vendor/contact-us'
     | '/(vendor-panel)/_vendor/dashboard'
@@ -401,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
     '/(vendor-panel)/_vendor': {
@@ -596,6 +615,7 @@ const AdminVendorsVendorIdSettingsRouteWithChildren =
   )
 
 interface AdminRouteChildren {
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminTransactionsIdRoute: typeof AdminTransactionsIdRoute
   AdminCmsIndexRoute: typeof AdminCmsIndexRoute
@@ -614,6 +634,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminDashboardRoute: AdminDashboardRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminTransactionsIdRoute: AdminTransactionsIdRoute,
   AdminCmsIndexRoute: AdminCmsIndexRoute,
