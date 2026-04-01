@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { db } from '@/firebase/config'
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, getCountFromServer } from 'firebase/firestore'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle2, XCircle, Tag, Wallet, History, AlertCircle, ShoppingBag } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +13,9 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { format } from 'date-fns'
+import { z } from 'zod'
+import { Button } from '@/components/ui/button'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export interface Student {
     id: string
@@ -25,6 +28,14 @@ export interface Student {
     creatorCode?: string
     profilePicture?: string
     amountSaved?: number
+    cashback?: number
+    savings?: number
+    dob?: string
+    gender?: string
+    role?: string
+    uid?: string
+    createdAt?: any
+    updatedAt?: any
 }
 
 export interface Redemption {
@@ -40,7 +51,14 @@ export interface Redemption {
     createdAt: any
 }
 
+const studentSettingsSearchSchema = z.object({
+    page: z.number().catch(1),
+    pageSize: z.number().catch(10),
+})
+
 export const Route = createFileRoute('/admin/students/$studentId/settings')({
+    validateSearch: (search) => studentSettingsSearchSchema.parse(search),
+    loaderDeps: ({ search: { page, pageSize } }) => ({ page, pageSize }),
     component: StudentSettings,
     loader: async ({ context: { queryClient }, params: { studentId } }) => {
         await queryClient.ensureQueryData({
@@ -85,19 +103,34 @@ function StudentSettings() {
         }
     })
 
-    const { data: redemptions = [], isLoading: isRedemptionsLoading } = useQuery({
-        queryKey: ['student-redemptions', studentId],
+    const { page, pageSize } = Route.useSearch()
+
+    const { data: { transactions: redemptions = [], totalCount = 0 } = {}, isLoading: isRedemptionsLoading } = useQuery({
+        queryKey: ['student-redemptions', studentId, page, pageSize],
         queryFn: async () => {
+            const collRef = collection(db, 'transactions')
+            const qCount = query(
+                collRef,
+                where('userId', '==', studentId)
+            )
+            const countSnapshot = await getCountFromServer(qCount)
+            const totalCount = countSnapshot.data().count
+
             const q = query(
-                collection(db, 'transactions'),
-                where('studentId', '==', studentId),
-                orderBy('createdAt', 'desc')
+                collRef,
+                where('userId', '==', studentId),
+                orderBy('createdAt', 'desc'),
+                limit(page * pageSize)
             )
             const snapshot = await getDocs(q)
-            return snapshot.docs.map(doc => ({
+            const startIdx = (page - 1) * pageSize
+            const endIdx = page * pageSize
+            const transactions = snapshot.docs.slice(startIdx, endIdx).map(doc => ({
                 id: doc.id,
                 ...doc.data()
             })) as Redemption[]
+
+            return { transactions, totalCount }
         }
     })
 
@@ -128,7 +161,11 @@ function StudentSettings() {
         )
     }
 
-    const contactInfo = student.email || student.phoneNumber || 'No contact provided'
+    const formatTimestamp = (timestamp: any) => {
+        if (!timestamp) return 'N/A'
+        if (timestamp.toDate) return format(timestamp.toDate(), 'MMMM d, yyyy h:mm:ss a')
+        return format(new Date(timestamp), 'MMMM d, yyyy h:mm:ss a')
+    }
 
     return (
         <div className="p-8 space-y-8 w-full max-w-[1200px] mx-auto animate-in fade-in duration-300">
@@ -165,10 +202,46 @@ function StudentSettings() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Contact</p>
-                            <p className="font-medium text-foreground">{contactInfo}</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">First Name</p>
+                                <p className="font-medium text-foreground">{student.firstName || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Last Name</p>
+                                <p className="font-medium text-foreground">{student.lastName || 'N/A'}</p>
+                            </div>
                         </div>
+
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Email</p>
+                            <p className="font-medium text-foreground">{student.email || 'N/A'}</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Gender</p>
+                                <p className="font-medium text-foreground">{student.gender || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Date of Birth</p>
+                                <p className="font-medium text-foreground">{student.dob || 'N/A'}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Role</p>
+                                <p className="font-medium text-foreground capitalize">{student.role || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Creator Code</p>
+                                <div className="font-mono font-medium text-foreground tracking-widest bg-muted/50 px-2 py-0.5 rounded text-sm inline-block">
+                                    {student.creatorCode || '----'}
+                                </div>
+                            </div>
+                        </div>
+
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-1">Status</p>
                             <div className="flex items-center gap-2">
@@ -185,17 +258,42 @@ function StudentSettings() {
                                 )}
                             </div>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Creator Code</p>
-                            <div className="font-mono font-medium text-foreground tracking-widest bg-muted/50 p-2 rounded-md inline-block">
-                                {student.creatorCode || '----'}
+
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Savings</p>
+                                <div className="flex items-center gap-2 text-lg font-bold text-brand-green">
+                                    <Wallet className="h-4 w-4" />
+                                    ${(student.savings ?? student.amountSaved ?? 0).toFixed(2)}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Cashback</p>
+                                <div className="flex items-center gap-2 text-lg font-bold text-blue-600">
+                                    <ShoppingBag className="h-4 w-4" />
+                                    ${(student.cashback || 0).toFixed(2)}
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Amount Saved</p>
-                            <div className="flex items-center gap-2 text-xl font-bold text-brand-green">
-                                <Wallet className="h-5 w-5" />
-                                ${student.amountSaved?.toFixed(2) || '0.00'}
+
+                        <div className="pt-2 border-t space-y-3">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-0.5">UID</p>
+                                <p className="text-xs font-mono text-muted-foreground break-all bg-muted/30 p-2 rounded">
+                                    {student.uid || student.id}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-0.5">Created At</p>
+                                <p className="text-xs text-foreground font-medium">
+                                    {formatTimestamp(student.createdAt)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground mb-0.5">Updated At</p>
+                                <p className="text-xs text-foreground font-medium">
+                                    {formatTimestamp(student.updatedAt)}
+                                </p>
                             </div>
                         </div>
                     </CardContent>
@@ -210,7 +308,7 @@ function StudentSettings() {
                                 Redemption History
                             </CardTitle>
                             <div className="text-sm font-medium text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
-                                {redemptions.length} total
+                                {totalCount} total
                             </div>
                         </div>
                     </CardHeader>
@@ -275,6 +373,35 @@ function StudentSettings() {
                             </TableBody>
                         </Table>
                     </CardContent>
+                    {/* Pagination Controls */}
+                    <div className="p-4 border-t flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground font-medium">
+                            Showing <span className="text-foreground">{Math.min(redemptions.length, pageSize)}</span> of <span className="text-foreground">{totalCount}</span> results
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate({ to: '.', search: (prev: any) => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }) })}
+                                disabled={page === 1 || isRedemptionsLoading}
+                                className="h-8 w-8 p-0"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <div className="text-sm font-bold bg-muted px-3 py-1 rounded-md min-w-[32px] text-center">
+                                {page}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate({ to: '.', search: (prev: any) => ({ ...prev, page: (prev.page || 1) + 1 }) })}
+                                disabled={page * pageSize >= totalCount || isRedemptionsLoading}
+                                className="h-8 w-8 p-0"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
                 </Card>
             </div>
         </div>
