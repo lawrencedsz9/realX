@@ -108,17 +108,18 @@ function RouteComponent() {
                                 <Checkbox />
                             </TableHead>
                             <TableHead className="text-black font-bold text-base">Date</TableHead>
-                            <TableHead className="text-black font-bold text-base">Type</TableHead>
+                            <TableHead className="text-black font-bold text-base">Type/Offer</TableHead>
+                            <TableHead className="text-black font-bold text-base">User</TableHead>
                             <TableHead className="text-black font-bold text-base">Vendor</TableHead>
                             <TableHead className="text-black font-bold text-base text-right">Amount</TableHead>
-                            <TableHead className="text-black font-bold text-base text-right">Rewards</TableHead>
+                            <TableHead className="text-black font-bold text-base text-right">Rewards/Benefits</TableHead>
                             <TableHead className="text-black font-bold text-base text-right pr-8">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-10">
+                                <TableCell colSpan={8} className="text-center py-10">
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#18B852] border-t-transparent" />
                                         <p className="text-muted-foreground font-medium">Loading transactions...</p>
@@ -127,7 +128,7 @@ function RouteComponent() {
                             </TableRow>
                         ) : transactionList.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                                     No transactions found.
                                 </TableCell>
                             </TableRow>
@@ -144,65 +145,121 @@ function RouteComponent() {
                                     <TableCell className="font-medium text-gray-900">
                                         <div className="flex flex-col">
                                             <span className="whitespace-nowrap">{tx.date}</span>
-                                            <span className="text-[10px] text-muted-foreground uppercase font-mono">{tx.id.slice(0, 8)}</span>
+                                            <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-tighter">
+                                                ID: {tx.transactionId || tx.id.slice(0, 8)}
+                                            </span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge 
-                                            variant={tx.type === 'offer_redemption' ? 'default' : 'secondary'}
-                                            className={tx.type === 'offer_redemption' ? 'bg-[#18B852] hover:bg-[#18B852]/90' : 'bg-blue-500 hover:bg-blue-500/90'}
-                                        >
-                                            {tx.type.replace(/_/g, ' ')}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="font-medium text-gray-900">{tx.vendorName}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex flex-col items-end">
-                                            <span className="font-bold text-gray-900">{tx.totalAmount}</span>
-                                            {tx.finalAmount !== undefined && tx.finalAmount !== parseInt(tx.totalAmount.replace(/[^\d]/g, '')) && (
-                                                <span className="text-[10px] text-muted-foreground line-through">
-                                                    QAR {tx.totalAmount}
+                                        <div className="flex flex-col gap-1">
+                                            <Badge 
+                                                variant={(tx.type === 'offer_redemption' || tx.type === 'offer') ? 'default' : 'secondary'}
+                                                className={(tx.type === 'offer_redemption' || tx.type === 'offer') ? 'bg-[#18B852] hover:bg-[#18B852]/90 w-fit' : 'bg-blue-500 hover:bg-blue-500/90 w-fit'}
+                                            >
+                                                {tx.type.replace(/_/g, ' ')}
+                                            </Badge>
+                                            {tx.offerId && (
+                                                <span className="text-[10px] text-muted-foreground font-mono">
+                                                    ID: {tx.offerId.slice(0, 8)}...
                                                 </span>
                                             )}
-                                            {tx.discountAmount !== undefined && tx.discountAmount > 0 && (
-                                                <span className="text-[10px] text-red-500">
-                                                    -{tx.discountAmount} {tx.discountType === 'percentage' ? '%' : 'off'}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            {tx.userId ? (
+                                                <Link 
+                                                    to="/admin/students/$studentId/settings" 
+                                                    params={{ studentId: tx.userId }}
+                                                    search={{ page: 1, pageSize: 10 }}
+                                                    className="text-sm font-bold text-blue-600 hover:underline"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {tx.userId.slice(0, 8)}...
+                                                </Link>
+                                            ) : (
+                                                <span className="text-sm font-medium text-gray-500">N/A</span>
+                                            )}
+                                            <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-tighter mt-0.5">User ID</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="font-medium text-gray-900">
+                                        <div className="flex flex-col">
+                                            {tx.vendorId ? (
+                                                <Link 
+                                                    to="/admin/vendors/$vendorId/settings" 
+                                                    params={{ vendorId: tx.vendorId }}
+                                                    search={{ page: 1, pageSize: 10 }}
+                                                    className="text-blue-600 font-bold hover:underline"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {tx.vendorName}
+                                                </Link>
+                                            ) : (
+                                                <span>{tx.vendorName}</span>
+                                            )}
+                                            {tx.vendorId && (
+                                                <span className="text-[10px] text-muted-foreground font-mono tracking-tighter">
+                                                    ID: {tx.vendorId.slice(0, 8)}...
                                                 </span>
                                             )}
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {tx.type === 'offer_redemption' ? (
-                                            <div className="flex flex-col items-end">
-                                                {tx.cashbackAmount !== undefined && (
-                                                    <span className="font-bold text-green-600">
-                                                        +QAR {tx.cashbackAmount}
-                                                    </span>
-                                                )}
-                                                {tx.creatorCode && (
-                                                    <span className="text-[10px] bg-amber-50 text-amber-700 px-1 rounded border border-amber-100">
-                                                        Code: {tx.creatorCode}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : tx.type === 'giftcard_redemption' ? (
-                                            <div className="flex flex-col items-end">
-                                                <span className="font-bold text-blue-600">
-                                                    -QAR {tx.redemptionCardAmount}
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-bold text-gray-900">
+                                                {tx.finalAmount !== undefined ? `QAR ${tx.finalAmount}` : tx.totalAmount}
+                                            </span>
+                                            {tx.finalAmount !== undefined && tx.totalAmount && parseInt(tx.totalAmount.replace(/[^\d.]/g, '')) !== tx.finalAmount && (
+                                                <span className="text-[10px] text-muted-foreground line-through">
+                                                    {tx.totalAmount}
                                                 </span>
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    Rem: QAR {tx.remainingAmount}
+                                            )}
+                                            {tx.discountAmount !== undefined && tx.discountAmount > 0 && (
+                                                <span className="text-[10px] text-red-500 font-medium">
+                                                    -QAR {tx.discountAmount} {tx.discountType === 'percentage' ? `(${tx.discountValue}%)` : ''}
                                                 </span>
-                                            </div>
-                                        ) : (
-                                            <span className="text-muted-foreground">-</span>
-                                        )}
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex flex-col items-end gap-1">
+                                            {tx.cashbackAmount !== undefined && tx.cashbackAmount > 0 && (
+                                                <span className="font-bold text-green-600 text-sm">
+                                                    +QAR {tx.cashbackAmount}
+                                                </span>
+                                            )}
+                                            {tx.redemptionCardAmount !== undefined && tx.redemptionCardAmount > 0 && (
+                                                <>
+                                                    <span className="font-bold text-blue-600">
+                                                        -QAR {tx.redemptionCardAmount}
+                                                    </span>
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        Rem: QAR {tx.remainingAmount}
+                                                    </span>
+                                                </>
+                                            )}
+                                            {tx.creatorCashbackAmount !== undefined && tx.creatorCashbackAmount > 0 && (
+                                                <span className="text-[10px] text-amber-600 font-medium font-mono">
+                                                    Creator: +{tx.creatorCashbackAmount}
+                                                </span>
+                                            )}
+                                            {tx.creatorCode && (
+                                                <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100 font-bold">
+                                                    {tx.creatorCode}
+                                                </span>
+                                            )}
+                                            {!tx.cashbackAmount && !tx.redemptionCardAmount && !tx.creatorCode && (
+                                                <span className="text-muted-foreground">-</span>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
                                         <Button 
                                             variant="ghost" 
                                             size="sm" 
                                             onClick={() => navigate({ to: '/admin/transactions/$id', params: { id: tx.id } })}
+                                            className="hover:bg-blue-50 hover:text-blue-600 rounded-lg"
                                         >
                                             <Eye className="h-4 w-4 mr-2" />
                                             Details

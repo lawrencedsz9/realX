@@ -22,8 +22,10 @@ export const Route = createFileRoute('/admin/transactions/')({
 export interface Transaction {
     id: string
     date: string
+    rawDate?: string | null
     transactionId: string
     vendorName: string
+    totalAmountNum?: number
     totalAmount: string
     type: string
     cashbackAmount?: number
