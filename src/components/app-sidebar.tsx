@@ -1,6 +1,5 @@
 import * as React from "react"
 import {
-
   IconHistory,
   IconLayoutDashboard,
   IconMail,
@@ -35,12 +34,12 @@ const data = {
     },
     {
       title: "Transaction History",
-      url: "#",
+      url: "/transaction-history",
       icon: IconHistory,
     },
     {
-      title: "Reviews",
-      url: "#",
+      title: "Campaign",
+      url: "/campaign",
       icon: IconStar,
     }
   ],
