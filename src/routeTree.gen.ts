@@ -9,6 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as OldHomeRouteImport } from './routes/old-home'
+import { Route as MobileInternRouteImport } from './routes/mobile-intern'
+import { Route as InternshipsRouteImport } from './routes/internships'
+import { Route as FullstackDevRouteImport } from './routes/fullstack-dev'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
@@ -40,6 +47,41 @@ import { Route as AdminVendorsVendorIdSettingsIndexRouteImport } from './routes/
 import { Route as AdminVendorsVendorIdSettingsOffersRouteImport } from './routes/admin/vendors/$vendorId.settings.offers'
 import { Route as AdminVendorsVendorIdSettingsBrandingRouteImport } from './routes/admin/vendors/$vendorId.settings.branding'
 
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OldHomeRoute = OldHomeRouteImport.update({
+  id: '/old-home',
+  path: '/old-home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MobileInternRoute = MobileInternRouteImport.update({
+  id: '/mobile-intern',
+  path: '/mobile-intern',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InternshipsRoute = InternshipsRouteImport.update({
+  id: '/internships',
+  path: '/internships',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FullstackDevRoute = FullstackDevRouteImport.update({
+  id: '/fullstack-dev',
+  path: '/fullstack-dev',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -225,6 +267,13 @@ const AdminVendorsVendorIdSettingsBrandingRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/app': typeof AppRoute
+  '/fullstack-dev': typeof FullstackDevRoute
+  '/internships': typeof InternshipsRoute
+  '/mobile-intern': typeof MobileInternRoute
+  '/old-home': typeof OldHomeRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
@@ -255,6 +304,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppRoute
+  '/fullstack-dev': typeof FullstackDevRoute
+  '/internships': typeof InternshipsRoute
+  '/mobile-intern': typeof MobileInternRoute
+  '/old-home': typeof OldHomeRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
@@ -286,6 +342,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/app': typeof AppRoute
+  '/fullstack-dev': typeof FullstackDevRoute
+  '/internships': typeof InternshipsRoute
+  '/mobile-intern': typeof MobileInternRoute
+  '/old-home': typeof OldHomeRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/(auth)/unauthorized': typeof authUnauthorizedRoute
@@ -320,6 +383,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/app'
+    | '/fullstack-dev'
+    | '/internships'
+    | '/mobile-intern'
+    | '/old-home'
+    | '/privacy-policy'
+    | '/terms-and-conditions'
     | '/login'
     | '/signup'
     | '/unauthorized'
@@ -350,6 +420,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app'
+    | '/fullstack-dev'
+    | '/internships'
+    | '/mobile-intern'
+    | '/old-home'
+    | '/privacy-policy'
+    | '/terms-and-conditions'
     | '/login'
     | '/signup'
     | '/unauthorized'
@@ -380,6 +457,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/app'
+    | '/fullstack-dev'
+    | '/internships'
+    | '/mobile-intern'
+    | '/old-home'
+    | '/privacy-policy'
+    | '/terms-and-conditions'
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/(auth)/unauthorized'
@@ -413,6 +497,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AppRoute: typeof AppRoute
+  FullstackDevRoute: typeof FullstackDevRoute
+  InternshipsRoute: typeof InternshipsRoute
+  MobileInternRoute: typeof MobileInternRoute
+  OldHomeRoute: typeof OldHomeRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   authLoginRoute: typeof authLoginRoute
   authSignupRoute: typeof authSignupRoute
   authUnauthorizedRoute: typeof authUnauthorizedRoute
@@ -421,6 +512,55 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/old-home': {
+      id: '/old-home'
+      path: '/old-home'
+      fullPath: '/old-home'
+      preLoaderRoute: typeof OldHomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mobile-intern': {
+      id: '/mobile-intern'
+      path: '/mobile-intern'
+      fullPath: '/mobile-intern'
+      preLoaderRoute: typeof MobileInternRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/internships': {
+      id: '/internships'
+      path: '/internships'
+      fullPath: '/internships'
+      preLoaderRoute: typeof InternshipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fullstack-dev': {
+      id: '/fullstack-dev'
+      path: '/fullstack-dev'
+      fullPath: '/fullstack-dev'
+      preLoaderRoute: typeof FullstackDevRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -718,6 +858,13 @@ const vendorPanelVendorRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AppRoute: AppRoute,
+  FullstackDevRoute: FullstackDevRoute,
+  InternshipsRoute: InternshipsRoute,
+  MobileInternRoute: MobileInternRoute,
+  OldHomeRoute: OldHomeRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  TermsAndConditionsRoute: TermsAndConditionsRoute,
   authLoginRoute: authLoginRoute,
   authSignupRoute: authSignupRoute,
   authUnauthorizedRoute: authUnauthorizedRoute,
