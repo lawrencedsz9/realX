@@ -22,7 +22,6 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as vendorPanelVendorRouteImport } from './routes/(vendor-panel)/_vendor'
 import { Route as authUnauthorizedRouteImport } from './routes/(auth)/unauthorized'
-import { Route as authSignupRouteImport } from './routes/(auth)/signup'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as AdminVendorsIndexRouteImport } from './routes/admin/vendors/index'
 import { Route as AdminTransactionsIndexRouteImport } from './routes/admin/transactions/index'
@@ -111,13 +110,6 @@ const authUnauthorizedRoute = authUnauthorizedRouteImport.update({
   path: '/unauthorized',
   getParentRoute: () => rootRouteImport,
 } as any)
-const authSignupRoute = authSignupRouteImport
-  .update({
-    id: '/(auth)/signup',
-    path: '/signup',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-  .lazy(() => import('./routes/(auth)/signup.lazy').then((d) => d.Route))
 const authLoginRoute = authLoginRouteImport
   .update({
     id: '/(auth)/login',
@@ -275,7 +267,6 @@ export interface FileRoutesByFullPath {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/login': typeof authLoginRoute
-  '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/': typeof AdminIndexRoute
@@ -312,7 +303,6 @@ export interface FileRoutesByTo {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/login': typeof authLoginRoute
-  '/signup': typeof authSignupRoute
   '/unauthorized': typeof authUnauthorizedRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin': typeof AdminIndexRoute
@@ -350,7 +340,6 @@ export interface FileRoutesById {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/(auth)/login': typeof authLoginRoute
-  '/(auth)/signup': typeof authSignupRoute
   '/(auth)/unauthorized': typeof authUnauthorizedRoute
   '/(vendor-panel)/_vendor': typeof vendorPanelVendorRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -391,7 +380,6 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/terms-and-conditions'
     | '/login'
-    | '/signup'
     | '/unauthorized'
     | '/admin/dashboard'
     | '/admin/'
@@ -428,7 +416,6 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/terms-and-conditions'
     | '/login'
-    | '/signup'
     | '/unauthorized'
     | '/admin/dashboard'
     | '/admin'
@@ -465,7 +452,6 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/terms-and-conditions'
     | '/(auth)/login'
-    | '/(auth)/signup'
     | '/(auth)/unauthorized'
     | '/(vendor-panel)/_vendor'
     | '/admin/dashboard'
@@ -505,7 +491,6 @@ export interface RootRouteChildren {
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   authLoginRoute: typeof authLoginRoute
-  authSignupRoute: typeof authSignupRoute
   authUnauthorizedRoute: typeof authUnauthorizedRoute
   vendorPanelVendorRoute: typeof vendorPanelVendorRouteWithChildren
 }
@@ -601,13 +586,6 @@ declare module '@tanstack/react-router' {
       path: '/unauthorized'
       fullPath: '/unauthorized'
       preLoaderRoute: typeof authUnauthorizedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(auth)/signup': {
-      id: '/(auth)/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof authSignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/login': {
@@ -866,7 +844,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   authLoginRoute: authLoginRoute,
-  authSignupRoute: authSignupRoute,
   authUnauthorizedRoute: authUnauthorizedRoute,
   vendorPanelVendorRoute: vendorPanelVendorRouteWithChildren,
 }

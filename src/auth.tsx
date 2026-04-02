@@ -5,8 +5,6 @@ import {
   type User,
   signOut,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
 } from 'firebase/auth'
 
 import { auth } from './firebase/config'
@@ -16,7 +14,6 @@ export type AuthContextType = {
   isInitialLoading: boolean
   isAdmin: boolean
   loginWithEmail: (email: string, password: string) => Promise<void>
-  signupWithEmail: (email: string, password: string, displayName?: string) => Promise<void>
   logout: () => Promise<void>
   user: User | null
 }
@@ -69,15 +66,6 @@ export function AuthContextProvider({
     setIsInitialLoading(false)
   }, [])
 
-  const signupWithEmail = React.useCallback(async (email: string, password: string, displayName?: string) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password)
-    if (displayName) {
-      await updateProfile(result.user, { displayName })
-    }
-    setUser(result.user)
-    setIsInitialLoading(false)
-  }, [])
-
   const contextValue = React.useMemo(
     () => ({
       isAuthenticated,
@@ -85,7 +73,6 @@ export function AuthContextProvider({
       isAdmin,
       user,
       loginWithEmail,
-      signupWithEmail,
       logout,
     }),
     [
@@ -94,7 +81,6 @@ export function AuthContextProvider({
       isAdmin,
       user,
       loginWithEmail,
-      signupWithEmail,
       logout,
     ],
   )
