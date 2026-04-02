@@ -169,12 +169,15 @@ export const createStudentUser = onCall(
       displayName: `${finalFirstName} ${finalLastName}`.trim(),
       emailVerified: true,
     };
-    
+
     if (password) {
       userConfig.password = password;
     } else {
-      // Generate a random password for users created via admin panel with just email
-      userConfig.password = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+      // Generate a random password for users created via admin panel with just
+      // email
+      userConfig.password =
+        Math.random().toString(36).slice(-10) +
+        Math.random().toString(36).slice(-10);
     }
 
     const user = await authAdmin.createUser(userConfig);
