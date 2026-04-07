@@ -12,8 +12,6 @@ export interface Vendor {
     phoneNumber?: string
     website?: string
     isFeatured?: boolean
-    shortDescriptionEn?: string
-    shortDescriptionAr?: string
     tagsEn?: string[]
     tagsAr?: string[]
     profilePicture?: string

@@ -1,13 +1,15 @@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-
 import { Button } from "@/components/ui/button"
-import { Upload, Phone, Loader2, CreditCard } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Upload, Phone, Loader2, CreditCard, X, Tag, Plus } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
-import { storage } from "@/firebase/config"
+import { storage, db } from "@/firebase/config"
+import { collection, getDocs } from "firebase/firestore"
+import type { Category } from "@/types/categories"
 
 interface BrandingSettingsProps {
     formData: any
@@ -18,8 +20,23 @@ interface BrandingSettingsProps {
 export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSettingsProps) {
     const [uploadingProfile, setUploadingProfile] = useState(false)
     const [uploadingCover, setUploadingCover] = useState(false)
+    const [categories, setCategories] = useState<Category[]>([])
     const profileInputRef = useRef<HTMLInputElement>(null)
     const coverInputRef = useRef<HTMLInputElement>(null)
+    const [tokenInput, setTokenInput] = useState("")
+
+    const selectedCategory = categories.find(c => c.nameEnglish === formData.mainCategory)
+    const availableSubcategories = selectedCategory?.subcategories || []
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const snapshot = await getDocs(collection(db, 'categories'))
+            const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category))
+            cats.sort((a, b) => a.order - b.order)
+            setCategories(cats)
+        }
+        fetchCategories()
+    }, [])
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profilePicture' | 'coverImage') => {
         const file = e.target.files?.[0]
@@ -191,28 +208,139 @@ export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSe
                     </div>
                 </div>
 
-                {/* Short Description */}
+                {/* Main Category */}
                 <div className="space-y-4">
-                    <Label className="text-base font-semibold text-slate-700">Short Description (English)</Label>
-                    <Textarea
-                        placeholder="Tim Hortons"
-                        value={formData.shortDescriptionEn || ""}
-                        onChange={(e) => setFormData({ ...formData, shortDescriptionEn: e.target.value })}
-                        className="bg-slate-50 border-none ring-0 focus-visible:ring-1 focus-visible:ring-blue-400 min-h-[160px] rounded-2xl p-5 text-sm"
-                    />
+                    <Label className="text-base font-semibold text-slate-700">Main Category</Label>
+                    <Select
+                        value={formData.mainCategory || ""}
+                        onValueChange={(value) => setFormData({ ...formData, mainCategory: value, subcategory: [] })}
+                    >
+                        <SelectTrigger className="w-full bg-slate-50 border-none h-14 rounded-2xl px-5 text-sm">
+                            <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.nameEnglish}>
+                                    {cat.nameEnglish} — {cat.nameArabic}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
+                {/* Subcategories */}
                 <div className="space-y-4">
-                    <Label className="text-base font-semibold text-slate-700">Short Description (Arabic)</Label>
-                    <Textarea
-                        placeholder="Tim Hortons"
-                        value={formData.shortDescriptionAr || ""}
-                        onChange={(e) => setFormData({ ...formData, shortDescriptionAr: e.target.value })}
-                        dir="rtl"
-                        className="bg-slate-50 border-none ring-0 focus-visible:ring-1 focus-visible:ring-blue-400 min-h-[160px] rounded-2xl p-5 text-sm"
-                    />
+                    <Label className="text-base font-semibold text-slate-700">Subcategories</Label>
+                    <Select
+                        value=""
+                        onValueChange={(value) => {
+                            const current = formData.subcategory || []
+                            if (!current.includes(value)) {
+                                setFormData({ ...formData, subcategory: [...current, value] })
+                            }
+                        }}
+                        disabled={!formData.mainCategory}
+                    >
+                        <SelectTrigger className="w-full bg-slate-50 border-none h-14 rounded-2xl px-5 text-sm">
+                            <SelectValue placeholder={formData.mainCategory ? "Add a subcategory" : "Select a main category first"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableSubcategories
+                                .filter(sub => !(formData.subcategory || []).includes(sub.nameEnglish))
+                                .map((sub) => (
+                                    <SelectItem key={sub.nameEnglish} value={sub.nameEnglish}>
+                                        {sub.nameEnglish} — {sub.nameArabic}
+                                    </SelectItem>
+                                ))}
+                        </SelectContent>
+                    </Select>
+                    {(formData.subcategory || []).length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                            {(formData.subcategory || []).map((sub: string) => {
+                                const subData = availableSubcategories.find(s => s.nameEnglish === sub)
+                                return (
+                                    <Badge key={sub} variant="secondary" className="px-3 py-1.5 text-sm gap-1.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">
+                                        <Tag className="w-3 h-3" />
+                                        {subData ? `${subData.nameEnglish} — ${subData.nameArabic}` : sub}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFormData({
+                                                    ...formData,
+                                                    subcategory: (formData.subcategory || []).filter((s: string) => s !== sub)
+                                                })
+                                            }}
+                                            className="ml-1 hover:text-red-500 transition-colors"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </Badge>
+                                )
+                            })}
+                        </div>
+                    )}
                 </div>
 
+                {/* Search Tokens */}
+                <div className="space-y-4 md:col-span-2">
+                    <Label className="text-base font-semibold text-slate-700">Search Tokens</Label>
+                    <div className="flex gap-2">
+                        <Input
+                            placeholder="Type a keyword and press Enter"
+                            value={tokenInput}
+                            onChange={(e) => setTokenInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    const token = tokenInput.trim().toLowerCase()
+                                    const current = formData.searchTokens || []
+                                    if (token && !current.includes(token)) {
+                                        setFormData({ ...formData, searchTokens: [...current, token] })
+                                    }
+                                    setTokenInput("")
+                                }
+                            }}
+                            className="bg-slate-50 border-none ring-0 focus-visible:ring-1 focus-visible:ring-blue-400 h-14 rounded-2xl px-5 text-sm flex-1"
+                        />
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="h-14 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600"
+                            onClick={() => {
+                                const token = tokenInput.trim().toLowerCase()
+                                const current = formData.searchTokens || []
+                                if (token && !current.includes(token)) {
+                                    setFormData({ ...formData, searchTokens: [...current, token] })
+                                }
+                                setTokenInput("")
+                            }}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </Button>
+                    </div>
+                    {(formData.searchTokens || []).length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                            {(formData.searchTokens || []).map((token: string) => (
+                                <Badge key={token} variant="secondary" className="px-3 py-1.5 text-sm gap-1.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">
+                                    <Tag className="w-3 h-3" />
+                                    {token}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFormData({
+                                                ...formData,
+                                                searchTokens: (formData.searchTokens || []).filter((t: string) => t !== token)
+                                            })
+                                        }}
+                                        className="ml-1 hover:text-red-500 transition-colors"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
             </div >
 
