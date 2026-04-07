@@ -2,10 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import {
     ArrowLeft,
+    ArrowUp,
+    ArrowDown,
     Trash2,
     Loader2,
     Settings,
-    PackagePlus
+    PackagePlus,
+    FolderOpen
 } from 'lucide-react'
 import { db, storage } from '@/firebase/config'
 import {
@@ -45,7 +48,7 @@ function CategoriesOverview() {
             })
             return cats.sort((a, b) => (a.order || 0) - (b.order || 0))
         },
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 1000 * 60 * 5,
     })
 
     useEffect(() => {
@@ -165,33 +168,36 @@ function CategoriesOverview() {
     }
 
     return (
-        <div className="p-8 space-y-12 max-w-6xl mx-auto font-sans">
+        <div className="p-8 space-y-8 max-w-6xl mx-auto font-sans">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="rounded-full bg-gray-100 hover:bg-gray-200"
+                        className="rounded-xl bg-gray-100 hover:bg-gray-200"
                         onClick={() => navigate({ to: '/admin/cms' })}
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <div className="flex items-center gap-2">
-                        <span className="text-2xl">🗳️</span>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            App CMS / <span className="font-bold">Categories</span>
-                        </h1>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <FolderOpen className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Categories</h1>
+                            <p className="text-xs text-gray-500 font-medium">{categories.length} categor{categories.length !== 1 ? 'ies' : 'y'} configured</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {categories.length > 0 && (
                         <Button
                             onClick={saveSorting}
                             disabled={saveSortingMutation.isPending}
                             variant="outline"
-                            className="border-purple-200 text-purple-600 hover:bg-purple-50 rounded-2xl px-6 h-11 font-bold shadow-sm"
+                            className="border-purple-200 text-purple-600 hover:bg-purple-50 rounded-xl px-6 h-10 font-bold shadow-sm"
                         >
                             {saveSortingMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                             Save Sorting
@@ -200,77 +206,85 @@ function CategoriesOverview() {
                     <Button
                         onClick={handleAddCategory}
                         disabled={uploading}
-                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-2xl px-6 h-11 gap-2 font-bold shadow-md transition-all sm:flex hidden"
+                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 h-10 gap-2 font-bold shadow-md shadow-purple-200 transition-all"
                     >
-                        {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <PackagePlus className="w-5 h-5" />}
-                        Add New Category
+                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackagePlus className="w-4 h-4" />}
+                        <span className="hidden sm:inline">Add New Category</span>
                     </Button>
                 </div>
                 <input type="file" ref={fileInputRef} className="hidden" onChange={onFileChange} accept="image/*" />
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {categories.map((cat, index) => (
                     <div
                         key={cat.id}
-                        className="flex gap-4 group"
+                        className="bg-[#F8F9F9] rounded-2xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-all"
                     >
-                        <div className="relative w-[130px] h-[130px] rounded-[2rem] overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100 shadow-sm transition-transform group-hover:scale-[1.02]">
-                            <img src={cat.imageUrl} className="w-full h-full object-cover" alt={cat.nameEnglish} />
-                            <div className="absolute top-2 left-0 right-0 px-2 opacity-0 group-hover:opacity-100 transition-opacity text-center">
-                                <Badge className="bg-purple-600/90 text-white rounded-full text-[10px] py-0.5 border-none shadow-sm capitalize">
+                        {/* Image */}
+                        <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
+                            <img src={cat.imageUrl} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300" alt={cat.nameEnglish} />
+                            <div className="absolute top-3 left-3">
+                                <Badge className="bg-purple-600/90 text-white rounded-xl text-[10px] py-0.5 px-2.5 border-none shadow-sm font-bold capitalize">
                                     {cat.nameEnglish}
+                                </Badge>
+                            </div>
+                            <div className="absolute top-3 right-3">
+                                <Badge className="bg-white/90 text-gray-700 rounded-xl text-[10px] py-0.5 px-2 border-none shadow-sm font-bold">
+                                    {cat.subcategories?.length || 0} sub{cat.subcategories?.length !== 1 ? 's' : ''}
                                 </Badge>
                             </div>
                         </div>
 
-                        <div className="flex flex-col justify-center gap-2 flex-1">
-                            <h3 className="text-lg font-bold text-gray-900 truncate">{cat.nameEnglish}</h3>
+                        {/* Actions */}
+                        <div className="p-4 space-y-2">
+                            <h3 className="text-base font-bold text-gray-900 truncate">{cat.nameEnglish}</h3>
 
-                            <div className="flex gap-1">
+                            <div className="flex gap-1.5">
                                 <Link to="/admin/cms/categories/$categoryId" params={{ categoryId: cat.id }} className="flex-1">
                                     <Button
                                         variant="outline"
-                                        className="w-full justify-start gap-2 rounded-xl h-10 border-gray-100 bg-[#F8F9F9] text-gray-900 font-bold text-xs px-3 hover:bg-gray-100 transition-colors"
+                                        className="w-full justify-start gap-2 rounded-xl h-9 border-gray-100 bg-white text-gray-900 font-bold text-xs px-3 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-600 transition-all shadow-sm"
                                     >
-                                        <Settings className="w-4 h-4 text-purple-600" /> Manage
+                                        <Settings className="w-3.5 h-3.5 text-purple-600" /> Manage
                                     </Button>
                                 </Link>
                                 <Button
                                     variant="outline"
-                                    className="rounded-xl h-10 w-10 border-gray-100 bg-[#F8F9F9] text-gray-600 hover:bg-gray-100 p-0 flex items-center justify-center"
+                                    size="icon"
+                                    className="rounded-xl h-9 w-9 border-gray-100 bg-white text-gray-500 hover:text-purple-600 hover:bg-purple-50"
                                     onClick={() => moveCategory(index, 'up')}
                                     disabled={index === 0}
                                 >
-                                    ↑
+                                    <ArrowUp className="h-4 w-4" />
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className="rounded-xl h-10 w-10 border-gray-100 bg-[#F8F9F9] text-gray-600 hover:bg-gray-100 p-0 flex items-center justify-center"
+                                    size="icon"
+                                    className="rounded-xl h-9 w-9 border-gray-100 bg-white text-gray-500 hover:text-purple-600 hover:bg-purple-50"
                                     onClick={() => moveCategory(index, 'down')}
                                     disabled={index === categories.length - 1}
                                 >
-                                    ↓
+                                    <ArrowDown className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="rounded-xl h-9 w-9 border-gray-100 text-red-400 hover:text-red-600 hover:bg-red-50"
+                                    onClick={() => handleDelete(cat.id, cat.imageUrl)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>
-
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start gap-2 rounded-xl h-10 border-gray-100 bg-[#F8F9F9] text-red-500 font-bold text-xs px-4 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                onClick={() => handleDelete(cat.id, cat.imageUrl)}
-                            >
-                                <Trash2 className="w-4 h-4" /> Delete Category
-                            </Button>
                         </div>
                     </div>
                 ))}
             </div>
 
-
             {categories.length === 0 && !categoriesQuery.isLoading && (
-                <div className="py-24 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-3">
-                    <div className="bg-white p-4 rounded-full shadow-sm">
+                <div className="py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-3">
+                    <div className="bg-white p-4 rounded-xl shadow-sm">
                         <PackagePlus className="w-10 h-10 opacity-30 text-purple-600" />
                     </div>
                     <p className="font-bold text-lg text-gray-500">No categories found</p>

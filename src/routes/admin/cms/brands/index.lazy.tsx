@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import {
     ArrowLeft,
+    ArrowUp,
+    ArrowDown,
     Image as ImageIcon,
     Plus,
     Trash2,
@@ -72,7 +74,6 @@ function BrandsManagement() {
                 lastUpdated: lastUpdated
             })
 
-            // Cleanup storage for deleted images
             if (pendingDeletions.length > 0) {
                 await Promise.all(pendingDeletions.map(async (url) => {
                     try {
@@ -169,31 +170,37 @@ function BrandsManagement() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
             </div>
         )
     }
 
     return (
         <div className="p-8 space-y-8 max-w-6xl mx-auto font-sans bg-white min-h-screen">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="rounded-full bg-gray-100 hover:bg-gray-200"
+                        className="rounded-xl bg-gray-100 hover:bg-gray-200"
                         onClick={() => navigate({ to: '/admin/cms' })}
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <div className="flex items-center gap-2">
-                        <span className="text-2xl">🏷️</span>
-                        <h1 className="text-3xl font-bold tracking-tight">Top Brands</h1>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                            <Type className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Top Brands</h1>
+                            <p className="text-xs text-gray-500 font-medium">{brands.length} brand{brands.length !== 1 ? 's' : ''} configured</p>
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="text-right">
+                    <div className="text-right hidden sm:block">
                         <p className="text-xs text-gray-400 font-medium">Last Updated</p>
                         <p className="text-sm font-bold text-gray-900">
                             {lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never'}
@@ -201,156 +208,156 @@ function BrandsManagement() {
                     </div>
                     <Button
                         onClick={() => saveBrands(brands)}
-                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-8 h-11 font-bold shadow-lg shadow-purple-200 transition-all"
+                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 h-10 font-bold shadow-lg shadow-purple-200 transition-all"
                     >
                         Save All Changes
                     </Button>
                 </div>
             </div>
 
-            <div className="space-y-6">
-                <div className="flex items-center justify-between border-b pb-4">
-                    <h2 className="text-xl font-bold text-gray-900">Configure Brands</h2>
-                    <Link
-                        to="/admin/cms/brands/add"
-                        className="inline-flex items-center justify-center bg-[#F8F9F9] hover:bg-gray-100 text-gray-900 border border-gray-100 rounded-full px-6 h-11 gap-2 font-bold shadow-sm transition-all"
-                    >
-                        <Plus className="w-4 h-4 text-purple-600" />
-                        Add New Brand
-                    </Link>
+            {/* Section Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <h2 className="text-lg font-bold text-gray-900">Configure Brands</h2>
+                <Link
+                    to="/admin/cms/brands/add"
+                    className="inline-flex items-center justify-center bg-[#F8F9F9] hover:bg-gray-100 text-gray-900 border border-gray-100 rounded-xl px-5 h-10 gap-2 font-bold text-sm shadow-sm transition-all"
+                >
+                    <Plus className="w-4 h-4 text-purple-600" />
+                    Add New Brand
+                </Link>
 
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={(e) => activeBrandId && onFileChange(e, activeBrandId)}
-                    />
-                </div>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => activeBrandId && onFileChange(e, activeBrandId)}
+                />
+            </div>
 
-                <div className="grid grid-cols-1 gap-6">
-                    {brands.map((brand, index) => (
-                        <div key={brand.id} className="bg-[#F8F9F9] rounded-[2rem] p-6 border border-gray-100 shadow-sm relative group">
-                            <div className="flex flex-col md:flex-row items-center gap-8">
-                                <div className="w-32 h-32 flex-shrink-0">
-                                    <div
-                                        onClick={() => triggerUpload(brand.id)}
-                                        className="relative w-full h-full rounded-2xl overflow-hidden bg-white border-2 border-dashed border-gray-200 cursor-pointer hover:border-purple-400 transition-all flex items-center justify-center group/img"
+            {/* Brand Cards */}
+            <div className="grid grid-cols-1 gap-4">
+                {brands.map((brand, index) => (
+                    <div key={brand.id} className="bg-[#F8F9F9] rounded-2xl p-6 border border-gray-100 shadow-sm relative group">
+                        <div className="flex flex-col md:flex-row items-center gap-6">
+                            {/* Logo */}
+                            <div className="w-24 h-24 flex-shrink-0">
+                                <div
+                                    onClick={() => triggerUpload(brand.id)}
+                                    className="relative w-full h-full rounded-xl overflow-hidden bg-white border-2 border-dashed border-gray-200 cursor-pointer hover:border-purple-400 transition-all flex items-center justify-center group/img"
+                                >
+                                    {brand.logoUrl ? (
+                                        <img src={brand.logoUrl} className="w-full h-full object-contain p-2" loading="lazy" />
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-1 opacity-30">
+                                            <ImageIcon className="w-6 h-6" />
+                                            <span className="text-[10px] font-bold text-center">Logo</span>
+                                        </div>
+                                    )}
+                                    {uploading === brand.id && (
+                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                            <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                        <span className="text-white text-[10px] font-bold px-2 py-1 bg-black/50 rounded-xl">Change</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Fields */}
+                            <div className="flex-1 w-full space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
+                                            <Type className="w-3 h-3" /> Brand Name
+                                        </label>
+                                        <input
+                                            value={brand.name}
+                                            onChange={(e) => handleUpdateBrand(brand.id, { name: e.target.value })}
+                                            placeholder="Brand Name"
+                                            className="w-full h-11 px-4 rounded-xl bg-white border border-gray-100 font-bold text-sm text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm"
+                                        />
+                                    </div>
+                                    <div className="flex items-end pb-1">
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => handleUpdateBrand(brand.id, { isActive: !brand.isActive })}
+                                                className={cn(
+                                                    "w-11 h-6 rounded-full transition-colors relative shadow-inner",
+                                                    brand.isActive ? "bg-purple-600" : "bg-gray-200"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all transform shadow-sm",
+                                                    brand.isActive ? "left-5.5" : "left-0.5"
+                                                )} />
+                                            </button>
+                                            <span className="text-xs font-bold text-gray-600">
+                                                {brand.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-end gap-1.5 pt-3 border-t border-gray-200/60">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                            const updated = [...brands]
+                                            if (index > 0) {
+                                                const temp = updated[index]
+                                                updated[index] = updated[index - 1]
+                                                updated[index - 1] = temp
+                                                setBrands(updated)
+                                            }
+                                        }}
+                                        disabled={index === 0}
+                                        className="rounded-xl h-9 w-9 border-gray-100 bg-white text-gray-500 hover:text-purple-600 hover:bg-purple-50"
                                     >
-                                        {brand.logoUrl ? (
-                                            <img src={brand.logoUrl} className="w-full h-full object-contain p-2" loading="lazy" />
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-1 opacity-30">
-                                                <ImageIcon className="w-6 h-6" />
-                                                <span className="text-[10px] font-bold text-center">Logo</span>
-                                            </div>
-                                        )}
-                                        {uploading === brand.id && (
-                                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                                <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
-                                            </div>
-                                        )}
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                                            <span className="text-white text-[10px] font-bold px-2 py-1 bg-black/50 rounded-full">Change</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 w-full space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-xs font-bold text-gray-500 ml-1 flex items-center gap-1">
-                                                <Type className="w-3 h-3" /> Brand Name
-                                            </label>
-                                            <input
-                                                value={brand.name}
-                                                onChange={(e) => handleUpdateBrand(brand.id, { name: e.target.value })}
-                                                placeholder="Brand Name"
-                                                className="w-full h-11 px-4 rounded-xl bg-white border border-gray-100 font-bold text-sm text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm"
-                                            />
-                                        </div>
-                                        <div className="flex items-end pb-1">
-                                            <div className="flex items-center gap-3">
-                                                <button
-                                                    onClick={() => handleUpdateBrand(brand.id, { isActive: !brand.isActive })}
-                                                    className={cn(
-                                                        "w-12 h-6 rounded-full transition-colors relative shadow-inner",
-                                                        brand.isActive ? "bg-purple-600" : "bg-gray-200"
-                                                    )}
-                                                >
-                                                    <div className={cn(
-                                                        "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all transform shadow-sm",
-                                                        brand.isActive ? "left-6.5" : "left-0.5"
-                                                    )} />
-                                                </button>
-                                                <span className="text-xs font-bold text-gray-600">
-                                                    {brand.isActive ? 'Active' : 'Inactive'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200/50">
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    const updated = [...brands]
-                                                    if (index > 0) {
-                                                        const temp = updated[index]
-                                                        updated[index] = updated[index - 1]
-                                                        updated[index - 1] = temp
-                                                        setBrands(updated)
-                                                    }
-                                                }}
-                                                disabled={index === 0}
-                                                className="rounded-lg h-8 border-gray-100 text-gray-600 font-bold text-[10px]"
-                                            >
-                                                Move Up
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    const updated = [...brands]
-                                                    if (index < brands.length - 1) {
-                                                        const temp = updated[index]
-                                                        updated[index] = updated[index + 1]
-                                                        updated[index + 1] = temp
-                                                        setBrands(updated)
-                                                    }
-                                                }}
-                                                disabled={index === brands.length - 1}
-                                                className="rounded-lg h-8 border-gray-100 text-gray-600 font-bold text-[10px]"
-                                            >
-                                                Move Down
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleDeleteBrand(brand.id)}
-                                                className="rounded-lg h-8 border-gray-100 text-red-500 hover:text-red-600 hover:bg-red-50 font-bold text-[10px]"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </Button>
-                                        </div>
-                                    </div>
+                                        <ArrowUp className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                            const updated = [...brands]
+                                            if (index < brands.length - 1) {
+                                                const temp = updated[index]
+                                                updated[index] = updated[index + 1]
+                                                updated[index + 1] = temp
+                                                setBrands(updated)
+                                            }
+                                        }}
+                                        disabled={index === brands.length - 1}
+                                        className="rounded-xl h-9 w-9 border-gray-100 bg-white text-gray-500 hover:text-purple-600 hover:bg-purple-50"
+                                    >
+                                        <ArrowDown className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => handleDeleteBrand(brand.id)}
+                                        className="rounded-xl h-9 w-9 border-gray-100 text-red-400 hover:text-red-600 hover:bg-red-50"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    </div>
+                ))}
 
-                    {brands.length === 0 && (
-                        <div className="col-span-full py-20 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-3">
-                            <div className="bg-white p-4 rounded-full shadow-sm">
-                                <ImageIcon className="w-8 h-8 opacity-30 text-purple-600" />
-                            </div>
-                            <p className="font-bold text-lg text-gray-500">No brands configured</p>
-                            <p className="text-sm">Click 'Add New Brand' to start the list.</p>
+                {brands.length === 0 && (
+                    <div className="py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-3">
+                        <div className="bg-white p-4 rounded-xl shadow-sm">
+                            <ImageIcon className="w-8 h-8 opacity-30 text-purple-600" />
                         </div>
-                    )}
-                </div>
+                        <p className="font-bold text-lg text-gray-500">No brands configured</p>
+                        <p className="text-sm">Click 'Add New Brand' to start the list.</p>
+                    </div>
+                )}
             </div>
 
             <div className="h-20" />

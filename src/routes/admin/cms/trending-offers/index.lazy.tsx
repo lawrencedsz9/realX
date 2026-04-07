@@ -141,9 +141,14 @@ function TrendingOffersManagement() {
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <div className="flex items-center gap-2">
-                        <Flame className="h-7 w-7 text-orange-500 fill-orange-500" />
-                        <h1 className="text-3xl font-bold tracking-tight">Trending Vendors</h1>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center">
+                            <Flame className="w-5 h-5 fill-orange-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Trending Vendors</h1>
+                            <p className="text-xs text-gray-500 font-medium">{orderedVendors.length} vendor{orderedVendors.length !== 1 ? 's' : ''}</p>
+                        </div>
                     </div>
                 </div>
 
@@ -167,7 +172,12 @@ function TrendingOffersManagement() {
 
             <div className="space-y-6">
                 <div className="flex flex-col gap-2 border-b pb-4">
-                    <h2 className="text-xl font-bold text-gray-900">Arrange Trending Vendors</h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-gray-900">Arrange Trending Vendors</h2>
+                        <span className="text-xs font-bold px-2.5 py-0.5 bg-purple-100 text-purple-600 rounded-xl">
+                            {orderedVendors.length} vendor{orderedVendors.length !== 1 ? 's' : ''}
+                        </span>
+                    </div>
                     <p className="text-sm text-gray-500">
                         Vendors marked as "Trending" appear here. The top 5 will be displayed on the customer app.
                     </p>

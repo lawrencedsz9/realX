@@ -120,14 +120,14 @@ function AddBannerPage() {
                     <Button
                         variant="outline"
                         onClick={() => navigate({ to: '/admin/cms/banners' })}
-                        className="rounded-full px-6 h-11 font-bold border-gray-200 hover:bg-gray-50"
+                        className="rounded-xl px-6 h-11 font-bold border-gray-200 hover:bg-gray-50"
                     >
                         Cancel
                     </Button>
                     <Button
                         onClick={handleSave}
                         disabled={loading}
-                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-8 h-11 font-bold shadow-lg shadow-purple-200 transition-all flex items-center gap-2"
+                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-8 h-11 font-bold shadow-lg shadow-purple-200 transition-all flex items-center gap-2"
                     >
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         Save Banner

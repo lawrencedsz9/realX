@@ -2,10 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
     ArrowLeft,
+    ArrowUp,
+    ArrowDown,
     Trash2,
     Loader2,
     PackagePlus,
-    Image as ImageIcon
+    Image as ImageIcon,
+    FolderOpen
 } from 'lucide-react'
 import { db, storage } from '@/firebase/config'
 import {
@@ -47,7 +50,6 @@ function SubCategoryItem({
     const [nameEnglish, setNameEnglish] = useState(sub.nameEnglish)
     const [nameArabic, setNameArabic] = useState(sub.nameArabic)
 
-    // Sync with props if they change from outside (e.g. after a save or move)
     useEffect(() => {
         setNameEnglish(sub.nameEnglish)
         setNameArabic(sub.nameArabic)
@@ -56,18 +58,18 @@ function SubCategoryItem({
     const hasChanges = nameEnglish !== sub.nameEnglish || nameArabic !== sub.nameArabic
 
     return (
-        <div className="flex flex-col gap-4 p-6 bg-[#F8F9F9] rounded-[2.5rem] border border-gray-100 shadow-sm group hover:border-purple-200 transition-all duration-300">
+        <div className="flex flex-col gap-4 p-5 bg-[#F8F9F9] rounded-2xl border border-gray-100 shadow-sm group hover:border-purple-200 transition-all duration-300">
             <div className="flex gap-4 items-start">
                 <div
-                    className="relative w-24 h-24 rounded-[1.5rem] overflow-hidden bg-white border border-gray-100 shadow-sm flex-shrink-0 cursor-pointer group-hover:scale-[1.05] transition-transform"
+                    className="relative w-20 h-20 rounded-xl overflow-hidden bg-white border border-gray-100 shadow-sm flex-shrink-0 cursor-pointer group-hover:scale-[1.05] transition-transform"
                     onClick={() => onImageClick(index)}
                 >
                     {sub.imageUrl ? (
                         <img src={sub.imageUrl} className="w-full h-full object-cover" alt={sub.nameEnglish} />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-1">
-                            <ImageIcon className="w-6 h-6" />
-                            <span className="text-[10px] font-bold">Add Image</span>
+                            <ImageIcon className="w-5 h-5" />
+                            <span className="text-[9px] font-bold">Add Image</span>
                         </div>
                     )}
                     {uploadingSubId === index && (
@@ -76,7 +78,7 @@ function SubCategoryItem({
                         </div>
                     )}
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-2.5">
                     <div className="space-y-1">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">English Name</label>
                         <Input
@@ -97,43 +99,43 @@ function SubCategoryItem({
                 </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
                 <Button
                     variant="outline"
-                    className="flex-1 h-10 rounded-xl border-red-100 bg-red-50/50 hover:bg-red-50 text-red-500 text-xs font-bold gap-2 transition-colors"
+                    className="flex-1 h-9 rounded-xl border-red-100 bg-red-50/50 hover:bg-red-50 text-red-500 text-xs font-bold gap-2 transition-colors"
                     onClick={() => onDelete(index)}
                 >
-                    <Trash2 className="w-4 h-4" /> Delete
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
                 </Button>
 
                 {hasChanges && (
                     <Button
-                        className="flex-1 h-10 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold gap-2 transition-all shadow-md"
+                        className="flex-1 h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold gap-2 transition-all shadow-md"
                         onClick={() => onUpdate(index, { nameEnglish, nameArabic })}
                         disabled={isUpdating}
                     >
-                        {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Sub'}
+                        {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Update Sub'}
                     </Button>
                 )}
 
-                <div className="flex gap-1">
-                    <Button
-                        variant="outline"
-                        className="rounded-xl h-10 w-10 border-gray-100 bg-white text-gray-600 hover:bg-gray-100 p-0"
-                        onClick={() => onMove(index, 'up')}
-                        disabled={index === 0}
-                    >
-                        ↑
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="rounded-xl h-10 w-10 border-gray-100 bg-white text-gray-600 hover:bg-gray-100 p-0"
-                        onClick={() => onMove(index, 'down')}
-                        disabled={isLast}
-                    >
-                        ↓
-                    </Button>
-                </div>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-xl h-9 w-9 border-gray-100 bg-white text-gray-500 hover:text-purple-600 hover:bg-purple-50"
+                    onClick={() => onMove(index, 'up')}
+                    disabled={index === 0}
+                >
+                    <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-xl h-9 w-9 border-gray-100 bg-white text-gray-500 hover:text-purple-600 hover:bg-purple-50"
+                    onClick={() => onMove(index, 'down')}
+                    disabled={isLast}
+                >
+                    <ArrowDown className="h-4 w-4" />
+                </Button>
             </div>
         </div>
     );
@@ -167,7 +169,6 @@ function ManageCategory() {
         staleTime: 1000 * 60 * 5,
     })
 
-    // Reset local state when category changes
     useEffect(() => {
         setLocalCategory(null)
     }, [categoryId])
@@ -178,7 +179,7 @@ function ManageCategory() {
         }
     }, [categoryQuery.data, localCategory])
 
-    const category = localCategory // Use local state for rendering
+    const category = localCategory
 
     const updateCategoryMutation = useMutation({
         mutationFn: async (updates: Partial<Category>) => {
@@ -188,7 +189,6 @@ function ManageCategory() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['category', categoryId] })
             queryClient.invalidateQueries({ queryKey: ['categories'] })
-            // Update local state with the changes we just made to avoid race conditions
             setLocalCategory(prev => prev ? { ...prev, ...variables } : null)
             toast.success('Changes saved successfully')
         },
@@ -219,12 +219,11 @@ function ManageCategory() {
             const downloadURL = await getDownloadURL(snapshot.ref)
 
             handleUpdateCategory({ imageUrl: downloadURL })
-            toast.success('Cover image uploaded internally. Click Save to persist.')
+            toast.success('Cover image uploaded. Click Save to persist.')
         } catch (error) {
             console.error('Error uploading cover:', error)
             toast.error('Upload failed')
         } finally {
-            setUploadingCover(true) // Trigger re-render to clear
             setUploadingCover(false)
             if (coverInputRef.current) coverInputRef.current.value = ''
         }
@@ -238,7 +237,6 @@ function ManageCategory() {
             imageUrl: ''
         }
         const updatedSubs = [...(category.subcategories || []), newSub]
-        // Optimistically update local state
         setLocalCategory(prev => prev ? { ...prev, subcategories: updatedSubs } : null)
         await updateCategoryMutation.mutateAsync({ subcategories: updatedSubs })
         toast.success('Sub-category added and saved')
@@ -247,7 +245,6 @@ function ManageCategory() {
     const handleDeleteSubCategory = async (index: number) => {
         if (!category || !confirm('Delete this sub-category?')) return
         const updatedSubs = (category.subcategories || []).filter((_, i) => i !== index)
-        // Optimistically update local state
         setLocalCategory(prev => prev ? { ...prev, subcategories: updatedSubs } : null)
         await updateCategoryMutation.mutateAsync({ subcategories: updatedSubs })
         toast.success('Sub-category deleted and saved')
@@ -258,7 +255,6 @@ function ManageCategory() {
         const updatedSubs = category.subcategories.map((sub, i) =>
             i === index ? { ...sub, ...updates } : sub
         )
-        // For sub-categories, we save immediately on "Update Sub" click
         await updateCategoryMutation.mutateAsync({ subcategories: updatedSubs })
     }
 
@@ -272,7 +268,6 @@ function ManageCategory() {
         newSubs[index] = newSubs[targetIndex]
         newSubs[targetIndex] = temp
 
-        // Optimistically update local state
         setLocalCategory(prev => prev ? { ...prev, subcategories: newSubs } : null)
         await updateCategoryMutation.mutateAsync({ subcategories: newSubs })
         toast.success('Order saved')
@@ -291,7 +286,6 @@ function ManageCategory() {
             const updatedSubs = category.subcategories.map((sub, i) =>
                 i === index ? { ...sub, imageUrl: downloadURL } : sub
             )
-            // Image uploads are also saved immediately to avoid state mismatch
             await updateCategoryMutation.mutateAsync({ subcategories: updatedSubs })
             toast.success('Sub-category image updated and saved')
         } catch (error) {
@@ -323,32 +317,35 @@ function ManageCategory() {
     if (!category) return null
 
     return (
-        <div className="p-8 space-y-12 max-w-6xl mx-auto font-sans bg-white min-h-screen">
+        <div className="p-8 space-y-10 max-w-6xl mx-auto font-sans bg-white min-h-screen">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="rounded-full bg-gray-100 hover:bg-gray-200"
+                        className="rounded-xl bg-gray-100 hover:bg-gray-200"
                         onClick={() => navigate({ to: '/admin/cms/categories' })}
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <div className="flex items-center gap-2">
-                        <span className="text-2xl">🗳️</span>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            App CMS / <span className="font-bold">Manage Category</span>
-                        </h1>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <FolderOpen className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">{category.nameEnglish}</h1>
+                            <p className="text-xs text-gray-500 font-medium">{category.subcategories?.length || 0} sub-categor{category.subcategories?.length !== 1 ? 'ies' : 'y'}</p>
+                        </div>
                     </div>
                 </div>
                 <Button
                     onClick={handleSaveChanges}
                     disabled={updateCategoryMutation.isPending || !localCategory}
-                    className="bg-green-600 hover:bg-green-700 text-white rounded-2xl px-8 h-12 font-bold shadow-lg transition-all flex items-center gap-2"
+                    className="bg-green-600 hover:bg-green-700 text-white rounded-xl px-8 h-10 font-bold shadow-lg shadow-green-200 transition-all flex items-center gap-2"
                 >
                     {updateCategoryMutation.isPending ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                         'Save Category Titles'
                     )}
@@ -357,10 +354,10 @@ function ManageCategory() {
 
             {/* Cover Section */}
             <div className="flex flex-col md:flex-row gap-8 items-start">
-                <div className="relative w-[130px] h-[175px] rounded-[2.5rem] overflow-hidden bg-gray-100 shadow-sm border border-gray-100 group">
+                <div className="relative w-[130px] h-[175px] rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-100 group">
                     <img src={category.imageUrl} className="w-full h-full object-cover" alt="Cover" />
                     <div className="absolute top-3 left-0 right-0 px-3">
-                        <Badge className="w-full justify-center bg-purple-600 text-[10px] py-1 border-none shadow-sm font-bold">
+                        <Badge className="w-full justify-center bg-purple-600 text-[10px] py-1 border-none shadow-sm font-bold rounded-xl">
                             {category.nameEnglish}
                         </Badge>
                     </div>
@@ -375,7 +372,7 @@ function ManageCategory() {
                     <p className="text-sm text-gray-400 font-medium italic">Recommended size: 100x135 pixels</p>
                     <Button
                         variant="outline"
-                        className="rounded-2xl h-11 border-gray-200 bg-[#F8F9F9] text-gray-900 font-bold px-6 shadow-sm gap-2 hover:bg-gray-100 transition-all"
+                        className="rounded-xl h-11 border-gray-200 bg-[#F8F9F9] text-gray-900 font-bold px-6 shadow-sm gap-2 hover:bg-gray-100 transition-all w-fit"
                         onClick={() => coverInputRef.current?.click()}
                         disabled={uploadingCover}
                     >
@@ -392,7 +389,7 @@ function ManageCategory() {
                     <Input
                         value={category.nameEnglish}
                         onChange={(e) => handleUpdateCategory({ nameEnglish: e.target.value })}
-                        className="h-12 rounded-2xl bg-[#F8F9F9] border-gray-100 font-bold px-6 focus:ring-purple-200 focus:bg-white transition-all shadow-sm"
+                        className="h-12 rounded-xl bg-[#F8F9F9] border-gray-100 font-bold px-6 focus:ring-purple-200 focus:bg-white transition-all shadow-sm"
                     />
                 </div>
                 <div className="space-y-3">
@@ -401,21 +398,29 @@ function ManageCategory() {
                         value={category.nameArabic}
                         dir="rtl"
                         onChange={(e) => handleUpdateCategory({ nameArabic: e.target.value })}
-                        className="h-12 rounded-2xl bg-[#F8F9F9] border-gray-100 font-bold px-6 focus:ring-purple-200 focus:bg-white transition-all shadow-sm text-right"
+                        className="h-12 rounded-xl bg-[#F8F9F9] border-gray-100 font-bold px-6 focus:ring-purple-200 focus:bg-white transition-all shadow-sm text-right"
                     />
                 </div>
             </div>
 
             {/* Sub-Categories */}
             <div className="space-y-8 pt-6 border-t">
-                <Button
-                    onClick={handleAddSubCategory}
-                    className="bg-purple-600 hover:bg-purple-700 text-white rounded-2xl px-6 h-11 gap-2 font-bold shadow-md transition-all"
-                >
-                    <PackagePlus className="w-5 h-5" /> Add New Sub-Category
-                </Button>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-bold text-gray-900">Sub-Categories</h2>
+                        <span className="text-xs font-bold px-2.5 py-0.5 bg-purple-100 text-purple-600 rounded-xl">
+                            {category.subcategories?.length || 0}
+                        </span>
+                    </div>
+                    <Button
+                        onClick={handleAddSubCategory}
+                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 h-10 gap-2 font-bold shadow-md transition-all"
+                    >
+                        <PackagePlus className="w-4 h-4" /> Add Sub-Category
+                    </Button>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {category.subcategories?.map((sub, i) => (
                         <SubCategoryItem
                             key={sub.nameEnglish || i}
@@ -435,8 +440,8 @@ function ManageCategory() {
                     ))}
 
                     {(!category.subcategories || category.subcategories.length === 0) && (
-                        <div className="col-span-full py-12 text-center text-gray-400 font-medium italic bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100">
-                            No sub-categories yet. Click "Add New Sub-Category" to start.
+                        <div className="col-span-full py-12 text-center text-gray-400 font-medium italic bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-100">
+                            No sub-categories yet. Click "Add Sub-Category" to start.
                         </div>
                     )}
                 </div>
