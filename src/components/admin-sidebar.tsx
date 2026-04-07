@@ -1,5 +1,6 @@
 import * as React from "react"
 import {
+  IconBell,
   IconHome,
   IconInfoCircle,
   IconReceipt,
@@ -50,6 +51,11 @@ const data = {
       title: "App CMS",
       url: "/admin/cms",
       icon: IconInfoCircle,
+    },
+    {
+      title: "Notifications",
+      url: "/admin/notifications",
+      icon: IconBell,
     },
   ],
 }

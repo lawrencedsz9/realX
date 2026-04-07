@@ -26,6 +26,7 @@ import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as AdminVendorsIndexRouteImport } from './routes/admin/vendors/index'
 import { Route as AdminTransactionsIndexRouteImport } from './routes/admin/transactions/index'
 import { Route as AdminStudentsIndexRouteImport } from './routes/admin/students/index'
+import { Route as AdminNotificationsIndexRouteImport } from './routes/admin/notifications/index'
 import { Route as AdminCmsIndexRouteImport } from './routes/admin/cms/index'
 import { Route as AdminTransactionsIdRouteImport } from './routes/admin/transactions/$id'
 import { Route as vendorPanelVendorTransactionHistoryRouteImport } from './routes/(vendor-panel)/_vendor.transaction-history'
@@ -142,6 +143,11 @@ const AdminStudentsIndexRoute = AdminStudentsIndexRouteImport.update({
 } as any).lazy(() =>
   import('./routes/admin/students/index.lazy').then((d) => d.Route),
 )
+const AdminNotificationsIndexRoute = AdminNotificationsIndexRouteImport.update({
+  id: '/notifications/',
+  path: '/notifications/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCmsIndexRoute = AdminCmsIndexRouteImport.update({
   id: '/cms/',
   path: '/cms/',
@@ -293,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/transaction-history': typeof vendorPanelVendorTransactionHistoryRoute
   '/admin/transactions/$id': typeof AdminTransactionsIdRoute
   '/admin/cms/': typeof AdminCmsIndexRoute
+  '/admin/notifications/': typeof AdminNotificationsIndexRoute
   '/admin/students/': typeof AdminStudentsIndexRoute
   '/admin/transactions/': typeof AdminTransactionsIndexRoute
   '/admin/vendors/': typeof AdminVendorsIndexRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/transaction-history': typeof vendorPanelVendorTransactionHistoryRoute
   '/admin/transactions/$id': typeof AdminTransactionsIdRoute
   '/admin/cms': typeof AdminCmsIndexRoute
+  '/admin/notifications': typeof AdminNotificationsIndexRoute
   '/admin/students': typeof AdminStudentsIndexRoute
   '/admin/transactions': typeof AdminTransactionsIndexRoute
   '/admin/vendors': typeof AdminVendorsIndexRoute
@@ -371,6 +379,7 @@ export interface FileRoutesById {
   '/(vendor-panel)/_vendor/transaction-history': typeof vendorPanelVendorTransactionHistoryRoute
   '/admin/transactions/$id': typeof AdminTransactionsIdRoute
   '/admin/cms/': typeof AdminCmsIndexRoute
+  '/admin/notifications/': typeof AdminNotificationsIndexRoute
   '/admin/students/': typeof AdminStudentsIndexRoute
   '/admin/transactions/': typeof AdminTransactionsIndexRoute
   '/admin/vendors/': typeof AdminVendorsIndexRoute
@@ -412,6 +421,7 @@ export interface FileRouteTypes {
     | '/transaction-history'
     | '/admin/transactions/$id'
     | '/admin/cms/'
+    | '/admin/notifications/'
     | '/admin/students/'
     | '/admin/transactions/'
     | '/admin/vendors/'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/transaction-history'
     | '/admin/transactions/$id'
     | '/admin/cms'
+    | '/admin/notifications'
     | '/admin/students'
     | '/admin/transactions'
     | '/admin/vendors'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/(vendor-panel)/_vendor/transaction-history'
     | '/admin/transactions/$id'
     | '/admin/cms/'
+    | '/admin/notifications/'
     | '/admin/students/'
     | '/admin/transactions/'
     | '/admin/vendors/'
@@ -642,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/students'
       fullPath: '/admin/students/'
       preLoaderRoute: typeof AdminStudentsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications/': {
+      id: '/admin/notifications/'
+      path: '/notifications'
+      fullPath: '/admin/notifications/'
+      preLoaderRoute: typeof AdminNotificationsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/cms/': {
@@ -820,6 +839,7 @@ interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminTransactionsIdRoute: typeof AdminTransactionsIdRoute
   AdminCmsIndexRoute: typeof AdminCmsIndexRoute
+  AdminNotificationsIndexRoute: typeof AdminNotificationsIndexRoute
   AdminStudentsIndexRoute: typeof AdminStudentsIndexRoute
   AdminTransactionsIndexRoute: typeof AdminTransactionsIndexRoute
   AdminVendorsIndexRoute: typeof AdminVendorsIndexRoute
@@ -841,6 +861,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminTransactionsIdRoute: AdminTransactionsIdRoute,
   AdminCmsIndexRoute: AdminCmsIndexRoute,
+  AdminNotificationsIndexRoute: AdminNotificationsIndexRoute,
   AdminStudentsIndexRoute: AdminStudentsIndexRoute,
   AdminTransactionsIndexRoute: AdminTransactionsIndexRoute,
   AdminVendorsIndexRoute: AdminVendorsIndexRoute,
