@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, Phone, Loader2, CreditCard, X, Tag, Plus } from "lucide-react"
+import { Upload, Phone, Loader2, CreditCard, X, Tag, Plus, TrendingUp } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useState, useRef, useEffect } from "react"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
@@ -208,6 +208,29 @@ export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSe
                     </div>
                 </div>
 
+                {/* Short Description English */}
+                <div className="space-y-4">
+                    <Label className="text-base font-semibold text-slate-700">Short Description (English)</Label>
+                    <Input
+                        placeholder="Best coffee in town"
+                        value={formData.shortDescription || ""}
+                        onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+                        className="bg-slate-50 border-none ring-0 focus-visible:ring-1 focus-visible:ring-blue-400 h-14 rounded-2xl px-5 text-sm"
+                    />
+                </div>
+
+                {/* Short Description Arabic */}
+                <div className="space-y-4 text-right">
+                    <Label className="text-base font-semibold text-slate-700">Short Description (Arabic)</Label>
+                    <Input
+                        placeholder="أفضل قهوة في المدينة"
+                        value={formData.shortDescriptionAr || ""}
+                        onChange={(e) => setFormData({ ...formData, shortDescriptionAr: e.target.value })}
+                        dir="rtl"
+                        className="bg-slate-50 border-none ring-0 focus-visible:ring-1 focus-visible:ring-blue-400 h-14 rounded-2xl px-5 text-sm"
+                    />
+                </div>
+
                 {/* Main Category */}
                 <div className="space-y-4">
                     <Label className="text-base font-semibold text-slate-700">Main Category</Label>
@@ -346,6 +369,21 @@ export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSe
 
             {/* XCard & Loyalty */}
             <div className="space-y-6 pt-8 border-t border-slate-100">
+                <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                    <Checkbox
+                        id="isTrending"
+                        checked={formData.isTrending || false}
+                        onCheckedChange={(checked) => setFormData({ ...formData, isTrending: !!checked })}
+                        className="h-5 w-5 rounded-md border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                    />
+                    <div className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-slate-400" />
+                        <Label htmlFor="isTrending" className="text-base font-semibold text-slate-700 cursor-pointer">
+                            Trending Vendor
+                        </Label>
+                    </div>
+                </div>
+
                 <div className="flex items-center space-x-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
                     <Checkbox
                         id="xcard"

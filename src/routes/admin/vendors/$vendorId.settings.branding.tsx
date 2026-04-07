@@ -43,6 +43,8 @@ interface Vendor {
     mainCategory?: string
     subcategory?: string[]
     isTrending?: boolean
+    shortDescription?: string
+    shortDescriptionAr?: string
     offers?: any[]
 }
 
