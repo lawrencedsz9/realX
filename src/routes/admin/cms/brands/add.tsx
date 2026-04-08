@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
     ArrowLeft,
@@ -16,6 +16,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { BrandItem } from '@/types/brands'
+import { getVendorList, type VendorOption } from '@/lib/vendorList'
 
 export const Route = createFileRoute('/admin/cms/brands/add')({
     component: AddBrandPage,
@@ -25,10 +26,14 @@ function AddBrandPage() {
     const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
     const [uploading, setUploading] = useState(false)
+    const [vendors, setVendors] = useState<VendorOption[]>([])
+
+    useEffect(() => {
+        getVendorList().then(setVendors).catch(err => console.error('Error fetching vendor list:', err))
+    }, [])
 
     const [brand, setBrand] = useState<BrandItem>({
         id: `brand_${Math.random().toString(36).substr(2, 9)}`,
-        name: '',
         logoUrl: '',
         isActive: true
     })
@@ -59,10 +64,6 @@ function AddBrandPage() {
     }
 
     const handleSave = async () => {
-        if (!brand.name.trim()) {
-            toast.error('Please enter a brand name')
-            return
-        }
         if (!brand.logoUrl) {
             toast.error('Please upload a logo')
             return
@@ -175,13 +176,22 @@ function AddBrandPage() {
 
                 <div className="max-w-xl mx-auto space-y-8 pt-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700 ml-1">Brand Name</label>
-                        <input
-                            value={brand.name}
-                            onChange={(e) => setBrand(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="e.g. Nike, Apple, Samsung"
-                            className="w-full h-14 px-6 rounded-[1.25rem] bg-white border border-gray-100 font-bold text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm focus:ring-4 focus:ring-purple-50"
-                        />
+                        <label className="text-sm font-bold text-gray-700 ml-1">Link to Vendor</label>
+                        <select
+                            value={brand.vendorId || ''}
+                            onChange={(e) => setBrand(prev => ({ ...prev, vendorId: e.target.value }))}
+                            className="w-full h-14 px-6 rounded-[1.25rem] bg-white border border-gray-100 font-bold text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm focus:ring-4 focus:ring-purple-50 appearance-none cursor-pointer"
+                        >
+                            <option value="">— No linked vendor —</option>
+                            {vendors.map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                            ))}
+                        </select>
+                        {brand.vendorId && (
+                            <p className="text-xs text-purple-500 font-medium ml-1">
+                                Linked: {vendors.find(v => v.id === brand.vendorId)?.name || brand.vendorId}
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-4 bg-white p-6 rounded-[1.5rem] border border-gray-50 w-fit">

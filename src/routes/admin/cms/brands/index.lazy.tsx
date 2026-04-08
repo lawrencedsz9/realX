@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { BrandItem } from '@/types/brands'
+import { getVendorList, type VendorOption } from '@/lib/vendorList'
 
 export const Route = createLazyFileRoute('/admin/cms/brands/')({
     component: BrandsManagement,
@@ -35,11 +36,13 @@ function BrandsManagement() {
     const [uploading, setUploading] = useState<string | null>(null)
     const [activeBrandId, setActiveBrandId] = useState<string | null>(null)
     const [pendingDeletions, setPendingDeletions] = useState<string[]>([])
+    const [vendors, setVendors] = useState<VendorOption[]>([])
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         fetchData()
+        getVendorList().then(setVendors).catch(err => console.error('Error fetching vendor list:', err))
     }, [])
 
     const fetchData = async () => {
@@ -267,37 +270,36 @@ function BrandsManagement() {
 
                             {/* Fields */}
                             <div className="flex-1 w-full space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
-                                            <Type className="w-3 h-3" /> Brand Name
-                                        </label>
-                                        <input
-                                            value={brand.name}
-                                            onChange={(e) => handleUpdateBrand(brand.id, { name: e.target.value })}
-                                            placeholder="Brand Name"
-                                            className="w-full h-11 px-4 rounded-xl bg-white border border-gray-100 font-bold text-sm text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm"
-                                        />
-                                    </div>
-                                    <div className="flex items-end pb-1">
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => handleUpdateBrand(brand.id, { isActive: !brand.isActive })}
-                                                className={cn(
-                                                    "w-11 h-6 rounded-full transition-colors relative shadow-inner",
-                                                    brand.isActive ? "bg-purple-600" : "bg-gray-200"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all transform shadow-sm",
-                                                    brand.isActive ? "left-5.5" : "left-0.5"
-                                                )} />
-                                            </button>
-                                            <span className="text-xs font-bold text-gray-600">
-                                                {brand.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </div>
-                                    </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Vendor</label>
+                                    <select
+                                        value={brand.vendorId || ''}
+                                        onChange={(e) => handleUpdateBrand(brand.id, { vendorId: e.target.value })}
+                                        className="w-full h-11 px-4 rounded-xl bg-white border border-gray-100 font-bold text-sm text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm appearance-none cursor-pointer"
+                                    >
+                                        <option value="">— No linked vendor —</option>
+                                        {vendors.map(v => (
+                                            <option key={v.id} value={v.id}>{v.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="flex items-center gap-3 pt-1">
+                                    <button
+                                        onClick={() => handleUpdateBrand(brand.id, { isActive: !brand.isActive })}
+                                        className={cn(
+                                            "w-11 h-6 rounded-full transition-colors relative shadow-inner",
+                                            brand.isActive ? "bg-purple-600" : "bg-gray-200"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all transform shadow-sm",
+                                            brand.isActive ? "left-5.5" : "left-0.5"
+                                        )} />
+                                    </button>
+                                    <span className="text-xs font-bold text-gray-600">
+                                        {brand.isActive ? 'Active' : 'Inactive'}
+                                    </span>
                                 </div>
 
                                 <div className="flex items-center justify-end gap-1.5 pt-3 border-t border-gray-200/60">

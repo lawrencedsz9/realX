@@ -1,7 +1,7 @@
 export interface BrandItem {
     id: string
-    name: string
     logoUrl: string
+    vendorId?: string
     isActive: boolean
 }
 

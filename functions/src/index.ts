@@ -295,7 +295,7 @@ export const sendNotification = onCall(
         notification: {
           title,
           body,
-          ...(imageUrl ? { imageUrl } : {}),
+          ...(imageUrl ? {imageUrl} : {}),
         },
       };
 
