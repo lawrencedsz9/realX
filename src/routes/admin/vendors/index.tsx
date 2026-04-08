@@ -1,20 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { db } from '@/firebase/config'
-import { collection, getDocs, query, limit, orderBy, getCountFromServer } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 
-const vendorsSearchSchema = z.object({
-    pageSize: z.number().catch(10),
+export const vendorsSearchSchema = z.object({
     page: z.number().catch(1),
+    pageSize: z.number().catch(10),
+    search: z.string().catch(''),
+    sort: z.enum(['name-asc', 'name-desc']).catch('name-asc'),
+    xcard: z.enum(['all', 'enabled', 'disabled']).catch('all'),
 })
 
 export const Route = createFileRoute('/admin/vendors/')({
     validateSearch: (search) => vendorsSearchSchema.parse(search),
-    loaderDeps: ({ search: { page, pageSize } }) => ({ page, pageSize }),
-    loader: async ({ context: { queryClient }, deps: { page, pageSize } }) => {
+    loader: async ({ context: { queryClient } }) => {
         await queryClient.ensureQueryData({
-            queryKey: ['vendors-list', page, pageSize],
-            queryFn: () => fetchVendors(page, pageSize),
+            queryKey: ['vendors-all'],
+            queryFn: fetchAllVendors,
         })
     },
 })
@@ -32,25 +34,13 @@ export interface Vendor {
     offers?: any[]
 }
 
-export async function fetchVendors(page: number, pageSize: number) {
-    console.log(`Loading page ${page}...`)
+export async function fetchAllVendors(): Promise<Vendor[]> {
     const collRef = collection(db, 'vendors')
-
-    const countSnapshot = await getCountFromServer(collRef)
-    const totalCount = countSnapshot.data().count
-
-    const q = query(
-        collRef,
-        orderBy('name'),
-        limit(page * pageSize)
-    )
-
+    const q = query(collRef, orderBy('name'))
     const snapshot = await getDocs(q)
-    const pageDocs = snapshot.docs.slice((page - 1) * pageSize, page * pageSize);
 
-    const vendors = await Promise.all(pageDocs.map(async (docSnap) => {
+    const vendors = await Promise.all(snapshot.docs.map(async (docSnap) => {
         const data = docSnap.data()
-        const vendorId = docSnap.id
 
         if (typeof data.xcard === 'undefined') {
             const { updateDoc } = await import('firebase/firestore')
@@ -59,7 +49,7 @@ export async function fetchVendors(page: number, pageSize: number) {
         }
 
         return {
-            id: vendorId,
+            id: docSnap.id,
             name: data.name || 'Unnamed Vendor',
             contact: data.phoneNumber?.toString() || data.contact || '',
             pin: data.pin || '----',
@@ -72,5 +62,5 @@ export async function fetchVendors(page: number, pageSize: number) {
         } as Vendor
     }))
 
-    return { vendors, totalCount }
+    return vendors
 }

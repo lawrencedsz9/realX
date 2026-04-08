@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Loader2, Save } from 'lucide-react'
+import { refreshVendorList } from '@/lib/vendorList'
 
 export const Route = createFileRoute('/admin/vendors/$vendorId/settings/branding')({
     component: BrandingSettingsComponent,
@@ -79,6 +80,7 @@ function BrandingSettingsComponent() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vendor', vendorId] })
+            refreshVendorList()
             toast.success('Settings updated successfully!', {
                 description: 'The vendor information has been synchronized with the database.',
                 duration: 3000,

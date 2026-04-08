@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
     ArrowLeft,
@@ -16,6 +16,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { BannerItem } from '@/types/banners'
+import { getVendorList, type VendorOption } from '@/lib/vendorList'
 
 export const Route = createFileRoute('/admin/cms/banners/add')({
     component: AddBannerPage,
@@ -25,6 +26,11 @@ function AddBannerPage() {
     const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
     const [uploading, setUploading] = useState<'mobile' | null>(null)
+    const [vendors, setVendors] = useState<VendorOption[]>([])
+
+    useEffect(() => {
+        getVendorList().then(setVendors).catch(err => console.error('Error fetching vendor list:', err))
+    }, [])
 
     const [banner, setBanner] = useState<BannerItem>({
         bannerId: `promo_${Math.random().toString(36).substr(2, 9)}`,
@@ -180,13 +186,22 @@ function AddBannerPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700 ml-1">Vendor ID / Link Key</label>
-                        <input
+                        <label className="text-sm font-bold text-gray-700 ml-1">Link to Vendor</label>
+                        <select
                             value={banner.vendorId}
                             onChange={(e) => setBanner(prev => ({ ...prev, vendorId: e.target.value }))}
-                            placeholder="e.g. winter_sale_2026"
-                            className="w-full h-14 px-6 rounded-[1.25rem] bg-white border border-gray-100 font-bold text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm focus:ring-4 focus:ring-purple-50"
-                        />
+                            className="w-full h-14 px-6 rounded-[1.25rem] bg-white border border-gray-100 font-bold text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm focus:ring-4 focus:ring-purple-50 appearance-none cursor-pointer"
+                        >
+                            <option value="">— No linked vendor —</option>
+                            {vendors.map(v => (
+                                <option key={v.id} value={v.id}>{v.name}</option>
+                            ))}
+                        </select>
+                        {banner.vendorId && (
+                            <p className="text-xs text-purple-500 font-medium ml-1">
+                                Linked: {vendors.find(v => v.id === banner.vendorId)?.name || banner.vendorId}
+                            </p>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-gray-700 ml-1">Alt Text (Accessibility)</label>

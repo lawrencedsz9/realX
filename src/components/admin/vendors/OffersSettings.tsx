@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { vendorQueryOptions, type EmbeddedOffer } from '@/queries'
+import { refreshVendorList } from '@/lib/vendorList'
 
 export function generateSearchTokens({
     name,
@@ -136,6 +137,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
             toast.success(editingIndex !== null ? 'Offer updated' : 'Offer created')
             setIsCreating(false)
             setEditingIndex(null)
+            refreshVendorList()
         },
         onError: () => {
             toast.error('Failed to save offer')
@@ -163,6 +165,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
             queryClient.invalidateQueries({ queryKey: ['vendor', vendorId] })
             toast.success('Offer deleted')
             setEditingIndex(null)
+            refreshVendorList()
         },
         onError: () => {
             toast.error('Failed to delete offer')

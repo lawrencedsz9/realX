@@ -1,4 +1,4 @@
-import { createLazyFileRoute, Link, useSearch } from '@tanstack/react-router'
+import { createLazyFileRoute, Link, useSearch, useNavigate } from '@tanstack/react-router'
 import {
     Table,
     TableBody,
@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Search, Upload, Plus, ChevronRight, Loader2, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
     Dialog,
     DialogContent,
@@ -34,7 +34,8 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { httpsCallable } from 'firebase/functions'
 import { doc, setDoc, updateDoc } from 'firebase/firestore'
 import { Switch } from '@/components/ui/switch'
-import { fetchVendors, type Vendor } from './index'
+import { fetchAllVendors, type Vendor } from './index'
+import { refreshVendorList } from '@/lib/vendorList'
 
 export const Route = createLazyFileRoute('/admin/vendors/')({
     component: RouteComponent,
@@ -42,21 +43,54 @@ export const Route = createLazyFileRoute('/admin/vendors/')({
 
 function RouteComponent() {
     const queryClient = useQueryClient()
-    const { page, pageSize } = useSearch({ from: '/admin/vendors/' })
+    const navigate = useNavigate({ from: '/admin/vendors/' })
+    const { page, pageSize, search: searchQuery, sort, xcard: xcardFilter } = useSearch({ from: '/admin/vendors/' })
     const [open, setOpen] = useState(false)
     const [form, setForm] = useState({ name: '', email: '', password: '' })
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null)
 
-    const { data, isLoading: isQueryLoading } = useQuery({
-        queryKey: ['vendors-list', page, pageSize],
-        queryFn: () => fetchVendors(page, pageSize),
+    const { data: allVendors = [], isLoading } = useQuery({
+        queryKey: ['vendors-all'],
+        queryFn: fetchAllVendors,
         staleTime: 1000 * 60 * 5,
     })
 
-    const vendorList = data?.vendors || []
-    const totalVendors = data?.totalCount || 0
+    // Client-side filter + sort
+    const filtered = useMemo(() => {
+        let result = [...allVendors]
 
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase()
+            result = result.filter(v =>
+                v.name.toLowerCase().includes(q) ||
+                v.contact.toLowerCase().includes(q)
+            )
+        }
+
+        if (xcardFilter === 'enabled') result = result.filter(v => v.xcard)
+        else if (xcardFilter === 'disabled') result = result.filter(v => !v.xcard)
+
+        result.sort((a, b) => {
+            const cmp = a.name.localeCompare(b.name)
+            return sort === 'name-desc' ? -cmp : cmp
+        })
+
+        return result
+    }, [allVendors, searchQuery, sort, xcardFilter])
+
+    // Client-side pagination
+    const totalVendors = filtered.length
+    const totalPages = Math.max(1, Math.ceil(totalVendors / pageSize))
+    const effectivePage = Math.min(page, totalPages)
+    const vendorList = filtered.slice((effectivePage - 1) * pageSize, effectivePage * pageSize)
+    const hasNextPage = effectivePage < totalPages
+    const hasPrevPage = effectivePage > 1
+
+    // Update filters and reset to page 1
+    const updateFilters = (updates: Record<string, string>) => {
+        navigate({ search: (prev) => ({ ...prev, ...updates, page: 1 }) })
+    }
 
     const addVendorMutation = useMutation({
         mutationFn: async (formData: typeof form) => {
@@ -73,9 +107,10 @@ function RouteComponent() {
             return result.data
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['vendors-list'] })
+            queryClient.invalidateQueries({ queryKey: ['vendors-all'] })
             setForm({ name: '', email: '', password: '' })
             setOpen(false)
+            refreshVendorList()
         },
         onError: (error) => {
             console.error('Error adding vendor: ', error)
@@ -89,7 +124,8 @@ function RouteComponent() {
             await updateDoc(vendorRef, { xcard })
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['vendors-list'] })
+            queryClient.invalidateQueries({ queryKey: ['vendors-all'] })
+            refreshVendorList()
         }
     })
 
@@ -99,9 +135,10 @@ function RouteComponent() {
             await deleteVendorUser({ uid: vendorId })
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['vendors-list'] })
+            queryClient.invalidateQueries({ queryKey: ['vendors-all'] })
             setDeleteConfirmOpen(false)
             setVendorToDelete(null)
+            refreshVendorList()
         },
         onError: (error) => {
             console.error('Error deleting vendor: ', error)
@@ -109,7 +146,7 @@ function RouteComponent() {
         }
     })
 
-    const loading = isQueryLoading
+    const loading = isLoading
 
     const handleAddVendor = async () => {
         if (!form.name || !form.email || !form.password) return
@@ -126,10 +163,6 @@ function RouteComponent() {
             deleteVendorMutation.mutate(vendorToDelete.id)
         }
     }
-
-    // Simplified Pagination logic
-    const hasNextPage = page * pageSize < totalVendors
-    const hasPrevPage = page > 1
 
     return (
         <div className="p-8 space-y-6 w-full max-w-[1600px] mx-auto">
@@ -167,12 +200,26 @@ function RouteComponent() {
             </Dialog>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="relative w-full sm:max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search for vendors"
-                        className="pl-9 bg-muted/50 border-none h-10"
-                    />
+                <div className="flex items-center gap-2 w-full sm:max-w-lg">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by name or contact"
+                            className="pl-9 bg-muted/50 border-none h-10"
+                            value={searchQuery}
+                            onChange={(e) => updateFilters({ search: e.target.value })}
+                        />
+                    </div>
+                    <Select value={xcardFilter} onValueChange={(v) => updateFilters({ xcard: v })}>
+                        <SelectTrigger className="w-[150px] h-10 bg-muted/50 border-none">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Vendors</SelectItem>
+                            <SelectItem value="enabled">XCard On</SelectItem>
+                            <SelectItem value="disabled">XCard Off</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Button variant="outline" className="gap-2 h-10">
@@ -243,18 +290,24 @@ function RouteComponent() {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
-                    <Select defaultValue="alphabetical">
-                        <SelectTrigger className="w-[180px] h-10 bg-muted/50 border-none">
-                            <SelectValue placeholder="Sort by" />
+                    <Select value={sort} onValueChange={(v) => updateFilters({ sort: v })}>
+                        <SelectTrigger className="w-[130px] h-10 bg-muted/50 border-none">
+                            <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="alphabetical">Sort by: Alphabetical</SelectItem>
-                            <SelectItem value="newest">Sort by: Newest</SelectItem>
-                            <SelectItem value="oldest">Sort by: Oldest</SelectItem>
+                            <SelectItem value="name-asc">A → Z</SelectItem>
+                            <SelectItem value="name-desc">Z → A</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
             </div>
+
+            {/* Results info */}
+            {(searchQuery || xcardFilter !== 'all') && (
+                <p className="text-sm text-muted-foreground">
+                    {totalVendors} result{totalVendors !== 1 ? 's' : ''} found
+                </p>
+            )}
 
             <div className="rounded-md bg-white">
                 <Table>
@@ -283,7 +336,9 @@ function RouteComponent() {
                         ) : vendorList.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                                    No vendors found.
+                                    {searchQuery || xcardFilter !== 'all'
+                                        ? 'No vendors match your filters.'
+                                        : 'No vendors found.'}
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -337,7 +392,7 @@ function RouteComponent() {
                 </Table>
             </div>
 
-            {/* Simple Pagination */}
+            {/* Pagination */}
             {(hasPrevPage || hasNextPage) && (
                 <div className="flex items-center justify-center gap-4 pt-4">
                     <Link
@@ -360,7 +415,7 @@ function RouteComponent() {
                     </Link>
 
                     <div className="text-sm font-medium text-muted-foreground">
-                        Page {page}
+                        Page {effectivePage} of {totalPages}
                     </div>
 
                     <Link

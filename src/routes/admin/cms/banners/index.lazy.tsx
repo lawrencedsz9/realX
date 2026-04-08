@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { BannerItem } from '@/types/banners'
+import { getVendorList, type VendorOption } from '@/lib/vendorList'
 
 export const Route = createLazyFileRoute('/admin/cms/banners/')({
     component: BannersManagement,
@@ -34,11 +35,13 @@ function BannersManagement() {
     const [uploading, setUploading] = useState<string | null>(null)
     const [activeBannerId, setActiveBannerId] = useState<string | null>(null)
     const [pendingDeletions, setPendingDeletions] = useState<string[]>([])
+    const [vendors, setVendors] = useState<VendorOption[]>([])
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         fetchData()
+        getVendorList().then(setVendors).catch(err => console.error('Error fetching vendor list:', err))
     }, [])
 
     const fetchData = async () => {
@@ -277,13 +280,17 @@ function BannersManagement() {
                             <div className="flex-1 space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Vendor ID / Link Key</label>
-                                        <input
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Vendor</label>
+                                        <select
                                             value={banner.vendorId}
                                             onChange={(e) => handleUpdateBanner(banner.bannerId, { vendorId: e.target.value })}
-                                            placeholder="winter_sale_2026"
-                                            className="w-full h-11 px-4 rounded-xl bg-white border border-gray-100 font-bold text-sm text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm"
-                                        />
+                                            className="w-full h-11 px-4 rounded-xl bg-white border border-gray-100 font-bold text-sm text-gray-900 outline-none focus:border-purple-400 transition-all shadow-sm appearance-none cursor-pointer"
+                                        >
+                                            <option value="">— No linked vendor —</option>
+                                            {vendors.map(v => (
+                                                <option key={v.id} value={v.id}>{v.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Alt Text</label>

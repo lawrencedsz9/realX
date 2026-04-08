@@ -59,7 +59,7 @@ function VendorSettingsLayout() {
             <div className="flex items-center gap-4">
                 <Link
                     to="/admin/vendors"
-                    search={{ page: 1, pageSize: 10 }}
+                    search={{ page: 1, pageSize: 10, search: '', sort: 'name-asc', xcard: 'all' }}
                     className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
                 >
                     <ArrowLeft className="h-5 w-5" />

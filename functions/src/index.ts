@@ -1,11 +1,11 @@
 import {setGlobalOptions} from "firebase-functions";
-import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {onCall, HttpsError, CallableRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 
 import {initializeApp} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {getFirestore} from "firebase-admin/firestore";
-import {getMessaging} from "firebase-admin/messaging";
+import {getMessaging, MulticastMessage} from "firebase-admin/messaging";
 
 // Init Admin SDK
 initializeApp();
@@ -13,8 +13,8 @@ initializeApp();
 setGlobalOptions({maxInstances: 10});
 
 export const createVendorUser = onCall(
-  {region: "me-central1"},
-  async (request: any) => {
+  {region: "me-central1", cors: true},
+  async (request: CallableRequest) => {
     const {auth, data} = request;
 
     // 1️⃣ Auth required
@@ -67,8 +67,8 @@ export const createVendorUser = onCall(
 );
 
 export const deleteVendorUser = onCall(
-  {region: "me-central1"},
-  async (request: any) => {
+  {region: "me-central1", cors: true},
+  async (request: CallableRequest) => {
     const {auth, data} = request;
 
     // 1️⃣ Auth required
@@ -116,8 +116,8 @@ export const deleteVendorUser = onCall(
 );
 
 export const createStudentUser = onCall(
-  {region: "me-central1"},
-  async (request: any) => {
+  {region: "me-central1", cors: true},
+  async (request: CallableRequest) => {
     const {auth, data} = request;
 
     // 1️⃣ Auth required
@@ -165,26 +165,37 @@ export const createStudentUser = onCall(
     }
 
     // 5️⃣ Create Auth user
-    const userConfig: any = {
+    const userConfig: {
+      email: string;
+      displayName: string;
+      emailVerified: boolean;
+      password: string;
+    } = {
       email,
       displayName: `${finalFirstName} ${finalLastName}`.trim(),
       emailVerified: true,
-    };
-
-    if (password) {
-      userConfig.password = password;
-    } else {
-      // Generate a random password for users created via admin panel with just
-      // email
-      userConfig.password =
+      password: password ||
         Math.random().toString(36).slice(-10) +
-        Math.random().toString(36).slice(-10);
-    }
+        Math.random().toString(36).slice(-10),
+    };
 
     const user = await authAdmin.createUser(userConfig);
 
     // 6️⃣ Create student Firestore document
-    const studentData: any = {
+    const studentData: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      gender: string;
+      dob: string;
+      uid: string;
+      role: string;
+      cashback: number;
+      createdAt: Date;
+      updatedAt: Date;
+      creatorCode?: string;
+      savings?: number;
+    } = {
       firstName: finalFirstName,
       lastName: finalLastName,
       email,
@@ -219,8 +230,8 @@ export const createStudentUser = onCall(
 );
 
 export const sendNotification = onCall(
-  {region: "me-central1"},
-  async (request: any) => {
+  {region: "me-central1", cors: true},
+  async (request: CallableRequest) => {
     const {auth, data} = request;
 
     if (!auth) {
@@ -247,7 +258,9 @@ export const sendNotification = onCall(
     const tokensSnapshot = await db.collection("fcm_tokens").get();
     const tokens = tokensSnapshot.docs
       .map((doc) => doc.data().token)
-      .filter((token): token is string => typeof token === "string" && token.length > 0);
+      .filter((token): token is string =>
+        typeof token === "string" && token.length > 0
+      );
 
     if (tokens.length === 0) {
       // Still log the notification even if no recipients
@@ -277,17 +290,14 @@ export const sendNotification = onCall(
     for (let i = 0; i < tokens.length; i += 500) {
       const batch = tokens.slice(i, i + 500);
 
-      const message: any = {
+      const message: MulticastMessage = {
         tokens: batch,
         notification: {
           title,
           body,
+          ...(imageUrl ? { imageUrl } : {}),
         },
       };
-
-      if (imageUrl) {
-        message.notification.imageUrl = imageUrl;
-      }
 
       const response = await messaging.sendEachForMulticast(message);
       totalSuccess += response.successCount;
