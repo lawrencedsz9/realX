@@ -401,29 +401,25 @@ export function BrandingSettings({ formData, setFormData, vendorId }: BrandingSe
 
                 {formData.xcard && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-300">
-                        {[0, 1, 2].map((i) => (
-                            <div key={i} className="space-y-3">
+                        {["Bronze", "Silver", "Gold"].map((tier, i) => (
+                            <div key={tier} className="space-y-3">
                                 <Label className="text-sm font-medium text-slate-600 ml-1">
-                                    Loyalty Tier {i + 1} Amount
+                                    {tier} Tier
                                 </Label>
                                 <div className="relative">
                                     <Input
                                         type="number"
-                                        placeholder={`Tier ${i + 1} Amount`}
+                                        placeholder="0"
                                         value={formData.loyalty?.[i] ?? ""}
                                         onChange={(e) => {
-                                            const val = parseInt(e.target.value);
-                                            const newLoyalty = [...(formData.loyalty || [])];
-                                            // Fill with zeros if array is too small
-                                            while (newLoyalty.length < 3) newLoyalty.push(0);
-                                            newLoyalty[i] = isNaN(val) ? 0 : val;
-                                            setFormData({ ...formData, loyalty: newLoyalty });
+                                            const val = parseInt(e.target.value) || 0
+                                            const loyalty = [formData.loyalty?.[0] ?? 0, formData.loyalty?.[1] ?? 0, formData.loyalty?.[2] ?? 0]
+                                            loyalty[i] = val
+                                            setFormData({ ...formData, loyalty })
                                         }}
-                                        className="bg-slate-50 border-none ring-0 focus-visible:ring-1 focus-visible:ring-blue-400 h-14 rounded-2xl px-5 text-sm"
+                                        className="bg-slate-50 border-none ring-0 focus-visible:ring-1 focus-visible:ring-blue-400 h-14 rounded-2xl px-5 pr-14 text-sm"
                                     />
-                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                                        QAR
-                                    </div>
+                                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">QAR</span>
                                 </div>
                             </div>
                         ))}
