@@ -16,6 +16,7 @@ import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as vendorPanelVendorRouteImport } from './routes/(vendor-panel)/_vendor'
 import { Route as authUnauthorizedRouteImport } from './routes/(auth)/unauthorized'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as AdminVerificationRequestsIndexRouteImport } from './routes/admin/verification-requests/index'
 import { Route as AdminVendorsIndexRouteImport } from './routes/admin/vendors/index'
 import { Route as AdminTransactionsIndexRouteImport } from './routes/admin/transactions/index'
 import { Route as AdminStudentsIndexRouteImport } from './routes/admin/students/index'
@@ -78,6 +79,16 @@ const authLoginRoute = authLoginRouteImport
     getParentRoute: () => rootRouteImport,
   } as any)
   .lazy(() => import('./routes/(auth)/login.lazy').then((d) => d.Route))
+const AdminVerificationRequestsIndexRoute =
+  AdminVerificationRequestsIndexRouteImport.update({
+    id: '/verification-requests/',
+    path: '/verification-requests/',
+    getParentRoute: () => AdminRoute,
+  } as any).lazy(() =>
+    import('./routes/admin/verification-requests/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AdminVendorsIndexRoute = AdminVendorsIndexRouteImport.update({
   id: '/vendors/',
   path: '/vendors/',
@@ -252,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/admin/students/': typeof AdminStudentsIndexRoute
   '/admin/transactions/': typeof AdminTransactionsIndexRoute
   '/admin/vendors/': typeof AdminVendorsIndexRoute
+  '/admin/verification-requests/': typeof AdminVerificationRequestsIndexRoute
   '/admin/cms/banners/add': typeof AdminCmsBannersAddRoute
   '/admin/cms/brands/add': typeof AdminCmsBrandsAddRoute
   '/admin/cms/categories/$categoryId': typeof AdminCmsCategoriesCategoryIdRoute
@@ -284,6 +296,7 @@ export interface FileRoutesByTo {
   '/admin/students': typeof AdminStudentsIndexRoute
   '/admin/transactions': typeof AdminTransactionsIndexRoute
   '/admin/vendors': typeof AdminVendorsIndexRoute
+  '/admin/verification-requests': typeof AdminVerificationRequestsIndexRoute
   '/admin/cms/banners/add': typeof AdminCmsBannersAddRoute
   '/admin/cms/brands/add': typeof AdminCmsBrandsAddRoute
   '/admin/cms/categories/$categoryId': typeof AdminCmsCategoriesCategoryIdRoute
@@ -318,6 +331,7 @@ export interface FileRoutesById {
   '/admin/students/': typeof AdminStudentsIndexRoute
   '/admin/transactions/': typeof AdminTransactionsIndexRoute
   '/admin/vendors/': typeof AdminVendorsIndexRoute
+  '/admin/verification-requests/': typeof AdminVerificationRequestsIndexRoute
   '/admin/cms/banners/add': typeof AdminCmsBannersAddRoute
   '/admin/cms/brands/add': typeof AdminCmsBrandsAddRoute
   '/admin/cms/categories/$categoryId': typeof AdminCmsCategoriesCategoryIdRoute
@@ -353,6 +367,7 @@ export interface FileRouteTypes {
     | '/admin/students/'
     | '/admin/transactions/'
     | '/admin/vendors/'
+    | '/admin/verification-requests/'
     | '/admin/cms/banners/add'
     | '/admin/cms/brands/add'
     | '/admin/cms/categories/$categoryId'
@@ -385,6 +400,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/admin/transactions'
     | '/admin/vendors'
+    | '/admin/verification-requests'
     | '/admin/cms/banners/add'
     | '/admin/cms/brands/add'
     | '/admin/cms/categories/$categoryId'
@@ -418,6 +434,7 @@ export interface FileRouteTypes {
     | '/admin/students/'
     | '/admin/transactions/'
     | '/admin/vendors/'
+    | '/admin/verification-requests/'
     | '/admin/cms/banners/add'
     | '/admin/cms/brands/add'
     | '/admin/cms/categories/$categoryId'
@@ -492,6 +509,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/login'
       preLoaderRoute: typeof authLoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/verification-requests/': {
+      id: '/admin/verification-requests/'
+      path: '/verification-requests'
+      fullPath: '/admin/verification-requests/'
+      preLoaderRoute: typeof AdminVerificationRequestsIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/vendors/': {
       id: '/admin/vendors/'
@@ -701,6 +725,7 @@ interface AdminRouteChildren {
   AdminStudentsIndexRoute: typeof AdminStudentsIndexRoute
   AdminTransactionsIndexRoute: typeof AdminTransactionsIndexRoute
   AdminVendorsIndexRoute: typeof AdminVendorsIndexRoute
+  AdminVerificationRequestsIndexRoute: typeof AdminVerificationRequestsIndexRoute
   AdminCmsBannersAddRoute: typeof AdminCmsBannersAddRoute
   AdminCmsBrandsAddRoute: typeof AdminCmsBrandsAddRoute
   AdminCmsCategoriesCategoryIdRoute: typeof AdminCmsCategoriesCategoryIdRoute
@@ -723,6 +748,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminStudentsIndexRoute: AdminStudentsIndexRoute,
   AdminTransactionsIndexRoute: AdminTransactionsIndexRoute,
   AdminVendorsIndexRoute: AdminVendorsIndexRoute,
+  AdminVerificationRequestsIndexRoute: AdminVerificationRequestsIndexRoute,
   AdminCmsBannersAddRoute: AdminCmsBannersAddRoute,
   AdminCmsBrandsAddRoute: AdminCmsBrandsAddRoute,
   AdminCmsCategoriesCategoryIdRoute: AdminCmsCategoriesCategoryIdRoute,

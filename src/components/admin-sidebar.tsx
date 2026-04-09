@@ -1,6 +1,7 @@
 import * as React from "react"
 import {
   IconBell,
+  IconClipboardCheck,
   IconHome,
   IconInfoCircle,
   IconReceipt,
@@ -46,6 +47,11 @@ const data = {
       title: "Students",
       url: "/admin/students",
       icon: IconUsers,
+    },
+    {
+      title: "Verification Requests",
+      url: "/admin/verification-requests",
+      icon: IconClipboardCheck,
     },
     {
       title: "App CMS",
