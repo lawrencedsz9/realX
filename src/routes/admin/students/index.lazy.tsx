@@ -17,7 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Search, Upload, Plus, ChevronRight, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Search, Upload, Plus, ChevronRight, Loader2, CheckCircle2, XCircle, Copy, Check } from 'lucide-react'
 import { useState, useRef } from 'react'
 import {
     Dialog,
@@ -53,15 +53,17 @@ function RouteComponent() {
     const { page, pageSize } = useSearch({ from: '/admin/students/' })
     const cursors = useRef<Record<number, string>>({})
     const [open, setOpen] = useState(false)
-    const [form, setForm] = useState({ 
-        firstName: '', 
-        lastName: '', 
-        email: '', 
-        password: '', 
-        gender: '', 
+    const [form, setForm] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        gender: '',
         dob: '',
         role: 'student'
     })
+    const [creatorCodeResult, setCreatorCodeResult] = useState<string | null>(null)
+    const [copied, setCopied] = useState(false)
 
     const { data, isLoading: isQueryLoading } = useQuery({
         queryKey: ['students', page, pageSize],
@@ -142,18 +144,22 @@ function RouteComponent() {
             })
             return result.data
         },
-        onSuccess: () => {
+        onSuccess: (data: any) => {
             queryClient.invalidateQueries({ queryKey: ['students'] })
-            setForm({ 
-                firstName: '', 
-                lastName: '', 
-                email: '', 
-                password: '', 
-                gender: '', 
-                dob: '',
-                role: 'student'
-            })
-            setOpen(false)
+            if (data?.creatorCode) {
+                setCreatorCodeResult(data.creatorCode)
+            } else {
+                setForm({
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    password: '',
+                    gender: '',
+                    dob: '',
+                    role: 'student'
+                })
+                setOpen(false)
+            }
         },
         onError: (error) => {
             console.error('Error adding student: ', error)
@@ -196,45 +202,170 @@ function RouteComponent() {
                                 <Plus className="h-4 w-4" /> Add New Student
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
+                        <DialogContent className="sm:max-w-[550px]">
                             <DialogHeader>
                                 <DialogTitle>Add New Student</DialogTitle>
                             </DialogHeader>
-                            <div className="grid gap-4 py-4 px-1">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">Email Address</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        value={form.email}
-                                        onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                        placeholder="student.email@example.com"
-                                        disabled={addStudentMutation.isPending}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        The student will be created with default details and will need to set their password via recovery.
-                                    </p>
+                            {creatorCodeResult ? (
+                                <div className="py-4 space-y-4">
+                                    <div className="flex items-center gap-2 text-green-600 font-medium">
+                                        <CheckCircle2 className="h-5 w-5" />
+                                        <span>Creator account created successfully!</span>
+                                    </div>
+                                    <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+                                        <p className="text-sm text-muted-foreground">Generated Creator Code:</p>
+                                        <div className="flex items-center gap-3">
+                                            <code className="text-2xl font-mono font-bold tracking-widest">{creatorCodeResult}</code>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 px-2"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(creatorCodeResult)
+                                                    setCopied(true)
+                                                    setTimeout(() => setCopied(false), 2000)
+                                                }}
+                                            >
+                                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        className="w-full bg-brand-green hover:bg-brand-green/90 text-white"
+                                        onClick={() => {
+                                            setCreatorCodeResult(null)
+                                            setCopied(false)
+                                            setForm({
+                                                firstName: '',
+                                                lastName: '',
+                                                email: '',
+                                                password: '',
+                                                gender: '',
+                                                dob: '',
+                                                role: 'student'
+                                            })
+                                            setOpen(false)
+                                        }}
+                                    >
+                                        Done
+                                    </Button>
                                 </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button
-                                    className="bg-brand-green hover:bg-brand-green/90 text-white"
-                                    onClick={handleAddStudent}
-                                    disabled={addStudentMutation.isPending}
-                                >
-                                    {addStudentMutation.isPending ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Adding Student...
-                                        </>
-                                    ) : (
-                                        'Add Student'
-                                    )}
-                                </Button>
-                            </DialogFooter>
+                            ) : (
+                                <>
+                                    <div className="grid gap-4 py-4 px-1 max-h-[60vh] overflow-y-auto">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="firstName">First Name</Label>
+                                                <Input
+                                                    id="firstName"
+                                                    value={form.firstName}
+                                                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                                                    placeholder="Student"
+                                                    disabled={addStudentMutation.isPending}
+                                                />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="lastName">Last Name</Label>
+                                                <Input
+                                                    id="lastName"
+                                                    value={form.lastName}
+                                                    onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                                                    placeholder="Doe"
+                                                    disabled={addStudentMutation.isPending}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="email">Email Address *</Label>
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                value={form.email}
+                                                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                                placeholder="student.email@example.com"
+                                                disabled={addStudentMutation.isPending}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="password">Password</Label>
+                                            <Input
+                                                id="password"
+                                                type="text"
+                                                value={form.password}
+                                                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                                placeholder="Auto-generated if left empty"
+                                                disabled={addStudentMutation.isPending}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Leave empty to auto-generate a secure password.
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="gender">Gender</Label>
+                                                <Select value={form.gender || 'Unspecified'} onValueChange={(value) => setForm({ ...form, gender: value })}>
+                                                    <SelectTrigger id="gender" disabled={addStudentMutation.isPending}>
+                                                        <SelectValue placeholder="Select gender" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Male">Male</SelectItem>
+                                                        <SelectItem value="Female">Female</SelectItem>
+                                                        <SelectItem value="Unspecified">Unspecified</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="dob">Date of Birth</Label>
+                                                <Input
+                                                    id="dob"
+                                                    type="date"
+                                                    value={form.dob}
+                                                    onChange={(e) => setForm({ ...form, dob: e.target.value })}
+                                                    disabled={addStudentMutation.isPending}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="role">Role</Label>
+                                            <Select value={form.role} onValueChange={(value) => setForm({ ...form, role: value })}>
+                                                <SelectTrigger id="role" disabled={addStudentMutation.isPending}>
+                                                    <SelectValue placeholder="Select role" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="student">Student</SelectItem>
+                                                    <SelectItem value="creator">Creator</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        {form.role === 'creator' && (
+                                            <div className="rounded-lg border border-brand-green/30 bg-brand-green/5 p-3">
+                                                <p className="text-sm text-muted-foreground">
+                                                    A unique 6-character creator code will be automatically generated for this account upon creation.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setOpen(false)}>
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            className="bg-brand-green hover:bg-brand-green/90 text-white"
+                                            onClick={handleAddStudent}
+                                            disabled={addStudentMutation.isPending}
+                                        >
+                                            {addStudentMutation.isPending ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Adding {form.role === 'creator' ? 'Creator' : 'Student'}...
+                                                </>
+                                            ) : (
+                                                `Add ${form.role === 'creator' ? 'Creator' : 'Student'}`
+                                            )}
+                                        </Button>
+                                    </DialogFooter>
+                                </>
+                            )}
                         </DialogContent>
                     </Dialog>
                     <Select defaultValue="alphabetical">

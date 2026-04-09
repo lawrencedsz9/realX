@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { db } from '@/firebase/config'
+import { db, functions } from '@/firebase/config'
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, getCountFromServer } from 'firebase/firestore'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, CheckCircle2, XCircle, Tag, Wallet, History, AlertCircle, ShoppingBag } from 'lucide-react'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { httpsCallable } from 'firebase/functions'
+import { ArrowLeft, CheckCircle2, XCircle, Tag, Wallet, History, AlertCircle, ShoppingBag, Trash2, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
     Table,
@@ -16,6 +17,14 @@ import { format } from 'date-fns'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog'
+import { useState } from 'react'
 
 export interface Student {
     id: string
@@ -84,6 +93,8 @@ export const Route = createFileRoute('/admin/students/$studentId/settings')({
 function StudentSettings() {
     const { studentId } = Route.useParams()
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
+    const [deleteOpen, setDeleteOpen] = useState(false)
 
     const { data: student, isLoading: isStudentLoading, isError: isStudentError } = useQuery({
         queryKey: ['student', studentId],
@@ -131,6 +142,22 @@ function StudentSettings() {
             })) as Redemption[]
 
             return { transactions, totalCount }
+        }
+    })
+
+    const deleteStudentMutation = useMutation({
+        mutationFn: async () => {
+            const deleteStudentUser = httpsCallable(functions, 'deleteStudentUser')
+            await deleteStudentUser({ uid: student?.uid || studentId })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['students'] })
+            navigate({ to: '/admin/students', search: { page: 1, pageSize: 10 } })
+        },
+        onError: (error) => {
+            console.error('Error deleting student: ', error)
+            alert('Failed to delete student: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            setDeleteOpen(false)
         }
     })
 
@@ -297,6 +324,45 @@ function StudentSettings() {
                             </div>
                         </div>
                     </CardContent>
+                    <div className="px-6 pb-6 pt-2 border-t">
+                        <Button
+                            variant="destructive"
+                            className="w-full gap-2"
+                            onClick={() => setDeleteOpen(true)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete Student
+                        </Button>
+                    </div>
+                    <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Delete Student</DialogTitle>
+                            </DialogHeader>
+                            <p className="text-muted-foreground">
+                                Are you sure you want to delete <strong>{student.name}</strong>? This will permanently remove their account, all Firestore data, and transaction history. This action cannot be undone.
+                            </p>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleteStudentMutation.isPending}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => deleteStudentMutation.mutate()}
+                                    disabled={deleteStudentMutation.isPending}
+                                >
+                                    {deleteStudentMutation.isPending ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Deleting...
+                                        </>
+                                    ) : (
+                                        'Delete'
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </Card>
 
                 {/* Redemptions List */}

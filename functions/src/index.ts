@@ -229,6 +229,70 @@ export const createStudentUser = onCall(
   }
 );
 
+export const deleteStudentUser = onCall(
+  {region: "me-central1", cors: true},
+  async (request: CallableRequest) => {
+    const {auth, data} = request;
+
+    // 1️⃣ Auth required
+    if (!auth) {
+      throw new HttpsError("unauthenticated", "User not authenticated");
+    }
+
+    // 2️⃣ Super admin only
+    if (!auth.token.admin) {
+      throw new HttpsError("permission-denied", "Admin access required");
+    }
+
+    const {uid} = data;
+
+    // 3️⃣ Validate input
+    if (!uid) {
+      throw new HttpsError(
+        "invalid-argument",
+        "student uid is required"
+      );
+    }
+
+    const authAdmin = getAuth();
+    const db = getFirestore();
+
+    // 4️⃣ Delete Auth user
+    try {
+      await authAdmin.deleteUser(uid);
+    } catch (error) {
+      logger.error("Error deleting Auth user", {uid, error});
+      // Delete Firestore docs even if Auth user is already gone
+    }
+
+    // 5️⃣ Delete student Firestore document
+    await db.collection("students").doc(uid).delete();
+
+    // 6️⃣ Delete related transactions
+    const transactionsSnapshot = await db
+      .collection("transactions")
+      .where("userId", "==", uid)
+      .get();
+
+    const batch = db.batch();
+    transactionsSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    if (transactionsSnapshot.size > 0) {
+      await batch.commit();
+    }
+
+    logger.info("Student deleted", {
+      studentId: uid,
+      transactionsDeleted: transactionsSnapshot.size,
+    });
+
+    return {
+      success: true,
+    };
+  }
+);
+
 export const sendNotification = onCall(
   {region: "me-central1", cors: true},
   async (request: CallableRequest) => {
