@@ -5,6 +5,7 @@ import * as logger from "firebase-functions/logger";
 import {initializeApp} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {getFirestore} from "firebase-admin/firestore";
+import {getStorage} from "firebase-admin/storage";
 import {getMessaging} from "firebase-admin/messaging";
 import {Resend} from "resend";
 
@@ -32,6 +33,7 @@ interface CreateStudentInput {
   gender: string;
   dob: string;
   role: string;
+  studentId?: string;
 }
 
 /**
@@ -43,7 +45,7 @@ async function doCreateStudentUser(input: CreateStudentInput) {
   const authAdmin = getAuth();
   const db = getFirestore();
 
-  const {firstName, lastName, email, password, gender, dob, role} = input;
+  const {firstName, lastName, email, password, gender, dob, role, studentId} = input;
   const finalFirstName = firstName || "Student";
   const finalLastName = lastName || "";
   const finalRole = role || "student";
@@ -84,6 +86,7 @@ async function doCreateStudentUser(input: CreateStudentInput) {
     updatedAt: Date;
     creatorCode?: string;
     savings?: number;
+    studentId?: string;
   } = {
     firstName: finalFirstName,
     lastName: finalLastName,
@@ -100,6 +103,10 @@ async function doCreateStudentUser(input: CreateStudentInput) {
   if (finalRole === "creator") {
     studentData.creatorCode = creatorCode;
     studentData.savings = 0;
+  }
+
+  if (studentId) {
+    studentData.studentId = studentId;
   }
 
   await db.collection("students").doc(user.uid).set(studentData);
@@ -321,7 +328,7 @@ export const approveVerificationRequest = onCall(
     }
 
     const {verificationRequestId, firstName, lastName,
-      gender, dob, role} = data;
+      gender, dob, role, studentId} = data;
 
     if (!verificationRequestId) {
       throw new HttpsError(
@@ -359,6 +366,7 @@ export const approveVerificationRequest = onCall(
       gender: gender || "Unspecified",
       dob: dob || new Date().toISOString().split("T")[0],
       role: role || "student",
+      studentId: studentId || undefined,
     });
 
     // Update verification request
@@ -466,6 +474,66 @@ export const rejectVerificationRequest = onCall(
     });
 
     logger.info("Verification request rejected", {verificationRequestId});
+
+    return {success: true};
+  }
+);
+
+export const deleteVerificationRequest = onCall(
+  {region: "me-central1", cors: true},
+  async (request: CallableRequest) => {
+    const {auth, data} = request;
+
+    if (!auth) {
+      throw new HttpsError("unauthenticated", "User not authenticated");
+    }
+
+    if (!auth.token.admin) {
+      throw new HttpsError("permission-denied", "Admin access required");
+    }
+
+    const {verificationRequestId} = data;
+
+    if (!verificationRequestId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "verificationRequestId is required"
+      );
+    }
+
+    const db = getFirestore();
+    const bucket = getStorage().bucket();
+    const reqDoc = db
+      .collection("verification_requests")
+      .doc(verificationRequestId);
+    const requestSnap = await reqDoc.get();
+
+    if (!requestSnap.exists) {
+      throw new HttpsError("not-found", "Verification request not found");
+    }
+
+    const requestData = requestSnap.data();
+
+    // Delete ID images from Storage
+    const deleteFile = async (filePath: string) => {
+      if (filePath) {
+        try {
+          await bucket.file(filePath).delete();
+        } catch (err) {
+          logger.warn("Failed to delete storage file", {filePath, error: err});
+        }
+      }
+    };
+
+    await Promise.all([
+      deleteFile(requestData?.idFrontPath),
+      deleteFile(requestData?.idBackPath),
+    ]);
+
+    // Delete the Firestore document
+    await reqDoc.delete();
+
+    logger.info("Verification request deleted", {verificationRequestId});
 
     return {success: true};
   }

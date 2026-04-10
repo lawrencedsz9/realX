@@ -27,7 +27,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Eye, Loader2, CheckCircle2, XCircle, Copy, Check } from 'lucide-react'
+import { Eye, Loader2, CheckCircle2, XCircle, Copy, Check, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { db, functions, storage } from '@/firebase/config'
 import { collection, getDocs, query, limit, orderBy, getCountFromServer, where } from 'firebase/firestore'
@@ -70,9 +70,11 @@ function RouteComponent() {
         gender: 'Unspecified',
         dob: '',
         role: 'student',
+        studentId: '',
     })
     const [creatorCodeResult, setCreatorCodeResult] = useState<string | null>(null)
     const [copied, setCopied] = useState(false)
+    const [deleteOpen, setDeleteOpen] = useState(false)
 
     const { data, isLoading } = useQuery({
         queryKey: ['verification-requests', page, pageSize, statusFilter],
@@ -150,6 +152,7 @@ function RouteComponent() {
                 gender: approveForm.gender,
                 dob: approveForm.dob,
                 role: approveForm.role,
+                studentId: approveForm.studentId,
             })
             return result.data as any
         },
@@ -161,7 +164,7 @@ function RouteComponent() {
                 setApproveOpen(false)
                 setDetailOpen(false)
             }
-            setApproveForm({ firstName: '', lastName: '', gender: 'Unspecified', dob: '', role: 'student' })
+            setApproveForm({ firstName: '', lastName: '', gender: 'Unspecified', dob: '', role: 'student', studentId: '' })
         },
         onError: (error) => {
             alert('Failed to approve request: ' + (error instanceof Error ? error.message : 'Unknown error'))
@@ -189,6 +192,25 @@ function RouteComponent() {
         },
     })
 
+    const deleteMutation = useMutation({
+        mutationFn: async () => {
+            if (!selectedRequest) return
+            const deleteFn = httpsCallable(functions, 'deleteVerificationRequest')
+            const result = await deleteFn({
+                verificationRequestId: selectedRequest.id,
+            })
+            return result.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['verification-requests'] })
+            setDeleteOpen(false)
+            setDetailOpen(false)
+        },
+        onError: (error) => {
+            alert('Failed to delete request: ' + (error instanceof Error ? error.message : 'Unknown error'))
+        },
+    })
+
     const handleView = (request: VerificationRequest) => {
         setSelectedRequest(request)
         setDetailOpen(true)
@@ -202,6 +224,11 @@ function RouteComponent() {
     const handleRejectClick = () => {
         setDetailOpen(false)
         setRejectOpen(true)
+    }
+
+    const handleDeleteClick = () => {
+        setDetailOpen(false)
+        setDeleteOpen(true)
     }
 
     const formatDate = (timestamp: any) => {
@@ -450,6 +477,20 @@ function RouteComponent() {
                                     </Button>
                                 </div>
                             )}
+
+                            {/* Delete button for reviewed requests */}
+                            {selectedRequest.status !== 'pending' && (
+                                <div className="flex pt-2">
+                                    <Button
+                                        variant="outline"
+                                        className="text-red-600 border-red-200 hover:bg-red-50"
+                                        onClick={handleDeleteClick}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete Verification Data
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </DialogContent>
@@ -566,6 +607,16 @@ function RouteComponent() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="approve-studentId">Student ID</Label>
+                                    <Input
+                                        id="approve-studentId"
+                                        value={approveForm.studentId}
+                                        onChange={(e) => setApproveForm({ ...approveForm, studentId: e.target.value })}
+                                        placeholder="e.g. STU-2024-001"
+                                        disabled={approveMutation.isPending}
+                                    />
+                                </div>
                                 {approveForm.role === 'creator' && (
                                     <div className="rounded-lg border border-brand-green/30 bg-brand-green/5 p-3">
                                         <p className="text-sm text-muted-foreground">
@@ -636,6 +687,45 @@ function RouteComponent() {
                                 </>
                             ) : (
                                 'Reject Request'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogContent className="sm:max-w-[450px]">
+                    <DialogHeader>
+                        <DialogTitle>Delete Verification Data</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <p className="text-sm text-muted-foreground">
+                            Are you sure you want to permanently delete the verification request from <strong>{selectedRequest?.email}</strong>?
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            This will remove the Firestore document and all associated ID images from storage. This action cannot be undone.
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => deleteMutation.mutate()}
+                            disabled={deleteMutation.isPending}
+                        >
+                            {deleteMutation.isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                </>
                             )}
                         </Button>
                     </DialogFooter>
