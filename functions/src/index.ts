@@ -47,7 +47,9 @@ async function doCreateStudentUser(input: CreateStudentInput) {
   const authAdmin = getAuth();
   const db = getFirestore();
 
-  const {firstName, lastName, email, password, gender, dob, role, studentId} = input;
+  const {
+    firstName, lastName, email, password, gender, dob, role, studentId,
+  } = input;
   const finalFirstName = firstName || "Student";
   const finalLastName = lastName || "";
   const finalRole = role || "student";
