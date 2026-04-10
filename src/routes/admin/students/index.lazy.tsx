@@ -29,9 +29,11 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { db, functions } from '@/firebase/config'
-import { collection, getDocs, query, limit, orderBy, getCountFromServer, startAt } from 'firebase/firestore'
+import { collection, getDocs, query, limit, orderBy, getCountFromServer, startAfter, type DocumentSnapshot } from 'firebase/firestore'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { httpsCallable } from 'firebase/functions'
+import { STALE_TIME } from '@/lib/constants'
+import type { StudentSearch } from './index'
 
 export const Route = createLazyFileRoute('/admin/students/')({
     component: RouteComponent,
@@ -51,7 +53,7 @@ interface Student {
 function RouteComponent() {
     const queryClient = useQueryClient()
     const { page, pageSize } = useSearch({ from: '/admin/students/' })
-    const cursors = useRef<Record<number, string>>({})
+    const cursorMap = useRef<Record<number, DocumentSnapshot>>({})
     const [open, setOpen] = useState(false)
     const [form, setForm] = useState({
         firstName: '',
@@ -68,41 +70,44 @@ function RouteComponent() {
     const { data, isLoading: isQueryLoading } = useQuery({
         queryKey: ['students', page, pageSize],
         queryFn: async () => {
-            console.log(`Loading page ${page}...`)
             const collRef = collection(db, 'students')
 
             const countSnapshot = await getCountFromServer(collRef)
             const totalCount = countSnapshot.data().count
 
-            // Check if we have a cursor for THIS page
-            const currentCursor = cursors.current[page]
+            // Build query with cursor-based pagination
+            let q
+            const cursor = cursorMap.current[page]
 
-            let q;
-            if (currentCursor) {
-                q = query(
-                    collRef,
-                    orderBy('firstName'),
-                    startAt(currentCursor),
-                    limit(pageSize)
-                )
+            if (cursor) {
+                q = query(collRef, orderBy('firstName'), startAfter(cursor), limit(pageSize))
+            } else if (page === 1) {
+                q = query(collRef, orderBy('firstName'), limit(pageSize))
             } else {
-                q = query(
-                    collRef,
-                    orderBy('firstName'),
-                    limit(page * pageSize)
-                )
+                // Fallback: fetch up to the end of previous page to get cursor
+                const prevQuery = query(collRef, orderBy('firstName'), limit((page - 1) * pageSize))
+                const prevSnap = await getDocs(prevQuery)
+                if (prevSnap.docs.length > 0) {
+                    const lastDoc = prevSnap.docs[prevSnap.docs.length - 1]
+                    cursorMap.current[page] = lastDoc
+                    q = query(collRef, orderBy('firstName'), startAfter(lastDoc), limit(pageSize))
+                } else {
+                    q = query(collRef, orderBy('firstName'), limit(pageSize))
+                }
             }
 
             const snapshot = await getDocs(q)
 
-            const pageDocs = currentCursor
-                ? snapshot.docs
-                : snapshot.docs.slice((page - 1) * pageSize);
+            // Store cursor for next page
+            if (snapshot.docs.length === pageSize) {
+                const lastDoc = snapshot.docs[snapshot.docs.length - 1]
+                cursorMap.current[page + 1] = lastDoc
+            }
 
-            const students = await Promise.all(pageDocs.map(async (doc) => {
-                const data = doc.data()
+            const students = snapshot.docs.map((docSnap) => {
+                const data = docSnap.data()
                 return {
-                    id: doc.id,
+                    id: docSnap.id,
                     firstName: data.firstName || '',
                     lastName: data.lastName || '',
                     name: (data.firstName || data.lastName) ? `${data.firstName || ''} ${data.lastName || ''}`.trim() : (data.name || 'Unnamed Student'),
@@ -111,20 +116,11 @@ function RouteComponent() {
                     creatorCode: data.creatorCode || '----',
                     profilePicture: data.profilePicture || '',
                 } as Student
-            }))
-
-            if (pageDocs.length === pageSize) {
-                const nextDocIndex = currentCursor ? pageSize : page * pageSize;
-                const nextDoc = snapshot.docs[nextDocIndex];
-                if (nextDoc) {
-                    const nextDocData = nextDoc.data();
-                    cursors.current[page + 1] = nextDocData.firstName;
-                }
-            }
+            })
 
             return { students, totalCount }
         },
-        staleTime: 1000 * 60 * 5,
+        staleTime: STALE_TIME.MEDIUM,
     })
 
     const studentList = data?.students || []
@@ -142,9 +138,9 @@ function RouteComponent() {
                 dob: formData.dob,
                 role: formData.role,
             })
-            return result.data
+            return result.data as { uid?: string; creatorCode?: string; success?: boolean }
         },
-        onSuccess: (data: any) => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['students'] })
             if (data?.creatorCode) {
                 setCreatorCodeResult(data.creatorCode)
@@ -163,7 +159,7 @@ function RouteComponent() {
         },
         onError: (error) => {
             console.error('Error adding student: ', error)
-            alert('Failed to add student (The cloud function might not be implemented yet): ' + (error instanceof Error ? error.message : 'Unknown error'))
+            alert('Failed to add student: ' + (error instanceof Error ? error.message : 'Unknown error'))
         }
     })
 
@@ -464,7 +460,7 @@ function RouteComponent() {
                 <div className="flex items-center justify-center gap-4 pt-4">
                     <Link
                         from="/admin/students/"
-                        search={(prev: any) => ({
+                        search={(prev: StudentSearch) => ({
                             ...prev,
                             page: Math.max(1, page - 1),
                         })}
@@ -487,7 +483,7 @@ function RouteComponent() {
 
                     <Link
                         from="/admin/students/"
-                        search={(prev: any) => ({
+                        search={(prev: StudentSearch) => ({
                             ...prev,
                             page: page + 1,
                         })}

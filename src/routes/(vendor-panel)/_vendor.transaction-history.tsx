@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { vendorTransactionsQueryOptions } from '@/queries'
 import { useAuth } from '@/auth'
@@ -21,32 +21,32 @@ function VendorTransactionHistory() {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Transaction History</h1>
-      
+
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-muted border-b">
               <tr>
-                <th className="px-6 py-4 font-medium text-gray-900">ID</th>
-                <th className="px-6 py-4 font-medium text-gray-900">Student</th>
-                <th className="px-6 py-4 font-medium text-gray-900">Date</th>
-                <th className="px-6 py-4 font-medium text-gray-900">Amount</th>
-                <th className="px-6 py-4 font-medium text-gray-900">Status</th>
+                <th className="px-6 py-4 font-medium text-foreground">ID</th>
+                <th className="px-6 py-4 font-medium text-foreground">Student</th>
+                <th className="px-6 py-4 font-medium text-foreground">Date</th>
+                <th className="px-6 py-4 font-medium text-foreground">Amount</th>
+                <th className="px-6 py-4 font-medium text-foreground">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {transactions?.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-gray-500">{tx.id.slice(0, 8)}...</td>
+                <tr key={tx.id} className="hover:bg-muted/50">
+                  <td className="px-6 py-4 text-muted-foreground">{tx.id.slice(0, 8)}...</td>
                   <td className="px-6 py-4 font-medium">{tx.studentName || 'Unknown User'}</td>
-                  <td className="px-6 py-4 text-gray-500">
+                  <td className="px-6 py-4 text-muted-foreground">
                     {tx.createdAt?.toDate().toLocaleDateString() || 'N/A'}
                   </td>
-                  <td className="px-6 py-4">${tx.finalAmount}</td>
+                  <td className="px-6 py-4">QAR {tx.finalAmount}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      tx.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                      tx.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                      tx.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      tx.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
                       {tx.status}
@@ -56,7 +56,7 @@ function VendorTransactionHistory() {
               ))}
               {(!transactions || transactions.length === 0) && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                     No transactions found.
                   </td>
                 </tr>

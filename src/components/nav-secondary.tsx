@@ -35,7 +35,7 @@ export function NavSecondary({
                   activeProps={{ "data-active": "true" } as any}
                   className={
                     item.title === "Contact Us"
-                      ? "data-[active=true]:bg-[#18B852] data-[active=true]:text-black data-[active=true]:before:hidden rounded-xl py-6"
+                      ? "data-[active=true]:bg-brand-green data-[active=true]:text-black data-[active=true]:before:hidden rounded-xl py-6"
                       : ""
                   }
                 >

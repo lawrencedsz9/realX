@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { db } from '@/firebase/config'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
+import type { EmbeddedOffer } from '@/queries'
 
 export const vendorsSearchSchema = z.object({
     page: z.number().catch(1),
@@ -31,7 +32,7 @@ export interface Vendor {
     mainCategory?: string
     subcategory?: string[]
     isTrending?: boolean
-    offers?: any[]
+    offers?: EmbeddedOffer[]
 }
 
 export async function fetchAllVendors(): Promise<Vendor[]> {
@@ -39,14 +40,8 @@ export async function fetchAllVendors(): Promise<Vendor[]> {
     const q = query(collRef, orderBy('name'))
     const snapshot = await getDocs(q)
 
-    const vendors = await Promise.all(snapshot.docs.map(async (docSnap) => {
+    return snapshot.docs.map((docSnap) => {
         const data = docSnap.data()
-
-        if (typeof data.xcard === 'undefined') {
-            const { updateDoc } = await import('firebase/firestore')
-            await updateDoc(docSnap.ref, { xcard: false })
-            data.xcard = false
-        }
 
         return {
             id: docSnap.id,
@@ -60,7 +55,5 @@ export async function fetchAllVendors(): Promise<Vendor[]> {
             isTrending: data.isTrending,
             offers: data.offers || [],
         } as Vendor
-    }))
-
-    return vendors
+    })
 }

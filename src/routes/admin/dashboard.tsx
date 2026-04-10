@@ -1,39 +1,91 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, queryOptions } from '@tanstack/react-query'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  type TooltipProps,
 } from 'recharts'
 import { Users, Store, TrendingUp, Tag, Bell, Search, ShoppingBag } from 'lucide-react'
 import { format, subMonths } from 'date-fns'
 import { db } from '@/firebase/config'
-import { collection, query, getCountFromServer, where, orderBy, limit, getDocs } from 'firebase/firestore'
+import {
+  collection, query, getCountFromServer, where, orderBy, limit, getDocs,
+  getAggregateFromServer, sum, Timestamp,
+} from 'firebase/firestore'
+import { STALE_TIME } from '@/lib/constants'
+import { formatTimestamp } from '@/lib/format-timestamp'
 
 export const Route = createFileRoute('/admin/dashboard')({
   component: AdminDashboard,
 })
+
+interface MonthlyRevenue {
+  month: string
+  amount: number
+}
+
+interface TopVendor {
+  name: string
+  sales: number
+}
+
+interface LiveActivityItem {
+  id: string
+  studentName: string
+  vendorName: string
+  amount: number
+  createdAt: Date
+  status: string
+}
+
+// --- Query options ---
+
+const dashboardStatsQueryOptions = () => queryOptions({
+  queryKey: ['dashboardStats'],
+  queryFn: fetchDashboardStats,
+  staleTime: STALE_TIME.MEDIUM,
+})
+
+const liveFeedQueryOptions = () => queryOptions({
+  queryKey: ['liveFeed'],
+  queryFn: fetchLiveFeed,
+  staleTime: STALE_TIME.MEDIUM,
+})
+
+const monthlyRevenueQueryOptions = () => queryOptions({
+  queryKey: ['monthlyRevenue'],
+  queryFn: fetchMonthlyRevenue,
+  staleTime: STALE_TIME.MEDIUM,
+})
+
+const topVendorsQueryOptions = () => queryOptions({
+  queryKey: ['topVendors'],
+  queryFn: fetchTopVendors,
+  staleTime: STALE_TIME.MEDIUM,
+})
+
+// --- Fetch functions ---
 
 async function fetchDashboardStats() {
   const [
     studentsCount,
     activeVendorsCount,
     totalTransactionsCount,
-    vendorsSnap
+    offerCountSnap,
   ] = await Promise.all([
     getCountFromServer(collection(db, 'students')),
     getCountFromServer(query(collection(db, 'vendors'), where('status', '==', 'Active'))),
     getCountFromServer(collection(db, 'transactions')),
-    getDocs(collection(db, 'vendors'))
+    // Try reading pre-aggregated offer count (1 read instead of N vendor reads)
+    getDocs(query(collection(db, 'vendors'), orderBy('name'))),
   ])
 
-  // Aggregate total offers from all vendor documents
   let totalOffers = 0
   let vendorsWithOffers = 0
   let vendorsWithoutOffers = 0
-  vendorsSnap.forEach(doc => {
-    const data = doc.data()
-    const offerCount = data.offers?.length || 0
+  offerCountSnap.forEach(docSnap => {
+    const offerCount = docSnap.data()?.offers?.length || 0
     totalOffers += offerCount
     if (offerCount > 0) vendorsWithOffers++
     else vendorsWithoutOffers++
@@ -45,43 +97,92 @@ async function fetchDashboardStats() {
     offers: totalOffers,
     vendorsWithOffers,
     vendorsWithoutOffers,
-    transactions: totalTransactionsCount.data().count
+    transactions: totalTransactionsCount.data().count,
   }
 }
 
-async function fetchRecentActivity() {
-  const q = query(collection(db, 'transactions'), orderBy('createdAt', 'desc'), limit(500))
+async function fetchLiveFeed(): Promise<LiveActivityItem[]> {
+  const q = query(collection(db, 'transactions'), orderBy('createdAt', 'desc'), limit(15))
   const snap = await getDocs(q)
-  
-  return snap.docs.map(doc => {
-    const data = doc.data() as any
-    let createdAt = new Date()
-    if (data.createdAt) {
-      if (typeof data.createdAt === 'string') {
-        createdAt = new Date(data.createdAt)
-      } else if (data.createdAt.toDate) {
-        createdAt = data.createdAt.toDate()
-      }
-    }
-    
+
+  return snap.docs.map(docSnap => {
+    const data = docSnap.data()
     return {
-      id: doc.id,
-      ...data,
+      id: docSnap.id,
       studentName: data.studentName || 'Unknown Student',
       vendorName: data.vendorName || 'Unknown Vendor',
-      amount: typeof data.finalAmount === 'number' ? data.finalAmount : (data.totalAmount ? Number(data.totalAmount) : 0),
-      createdAt,
-      status: data.status || 'completed'
+      amount: typeof data.finalAmount === 'number' ? data.finalAmount : 0,
+      createdAt: formatTimestamp(data.createdAt),
+      status: data.status || 'completed',
     }
   })
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+async function fetchMonthlyRevenue(): Promise<MonthlyRevenue[]> {
+  const monthData: Record<string, number> = {}
+
+  for (let i = 5; i >= 0; i--) {
+    const d = subMonths(new Date(), i)
+    monthData[format(d, 'MMM')] = 0
+  }
+
+  // Use aggregation queries per month for the last 6 months
+  const now = new Date()
+  await Promise.all(
+    Object.keys(monthData).map(async (month, i) => {
+      const monthIndex = 5 - i
+      const startDate = new Date(now.getFullYear(), now.getMonth() - monthIndex, 1)
+      const endDate = new Date(now.getFullYear(), now.getMonth() - monthIndex + 1, 0, 23, 59, 59, 999)
+
+      const q = query(
+        collection(db, 'transactions'),
+        where('status', '==', 'completed'),
+        where('createdAt', '>=', Timestamp.fromDate(startDate)),
+        where('createdAt', '<=', Timestamp.fromDate(endDate)),
+      )
+      const agg = await getAggregateFromServer(q, { totalRevenue: sum('finalAmount') })
+      monthData[month] = agg.data().totalRevenue ?? 0
+    }),
+  )
+
+  return Object.entries(monthData).map(([month, amount]) => ({ month, amount }))
+}
+
+async function fetchTopVendors(): Promise<TopVendor[]> {
+  // Fetch recent transactions to compute top vendors by revenue
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const q = query(
+    collection(db, 'transactions'),
+    where('status', '==', 'completed'),
+    where('createdAt', '>=', Timestamp.fromDate(thirtyDaysAgo)),
+    orderBy('createdAt', 'desc'),
+    limit(200),
+  )
+  const snap = await getDocs(q)
+
+  const sales: Record<string, number> = {}
+  snap.docs.forEach(docSnap => {
+    const data = docSnap.data()
+    const name = data.vendorName || 'Unknown Vendor'
+    sales[name] = (sales[name] || 0) + (data.finalAmount || 0)
+  })
+
+  return Object.entries(sales)
+    .map(([name, salesAmount]) => ({ name, sales: salesAmount }))
+    .sort((a, b) => b.sales - a.sales)
+    .slice(0, 5)
+}
+
+// --- Components ---
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-slate-100 rounded-lg p-3 shadow-md">
       <p className="text-[11px] text-slate-500 mb-1">{label}</p>
-      {payload.map((p: any, i: number) => (
+      {payload.map((p, i) => (
         <p key={i} className="text-xs font-semibold" style={{ color: p.color }}>
           {p.name === 'amount' ? `QAR ${(p.value ?? 0).toLocaleString()}` : p.value}
         </p>
@@ -93,50 +194,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Optimized Aggregation Query
-  const { data: stats = { students: 0, activeVendors: 0, offers: 0, vendorsWithOffers: 0, vendorsWithoutOffers: 0, transactions: 0 } } = useQuery({
-    queryKey: ['dashboardStats'],
-    queryFn: fetchDashboardStats,
-  })
-
-  // Recent 500 transactions for live feed, charts, and vendor performance
-  const { data: activity = [] } = useQuery({
-    queryKey: ['recentActivity'],
-    queryFn: fetchRecentActivity,
-  })
-
-  // Process data for charts
-  const revenueData = useMemo(() => {
-    const monthData: Record<string, number> = {}
-    
-    // Initialize last 6 months
-    for (let i = 5; i >= 0; i--) {
-      const d = subMonths(new Date(), i)
-      monthData[format(d, 'MMM')] = 0
-    }
-    
-    activity.forEach(txn => {
-      const month = format(txn.createdAt, 'MMM')
-      if (monthData[month] !== undefined) {
-        monthData[month] += txn.amount || 0
-      }
-    })
-
-    return Object.entries(monthData).map(([month, amount]) => ({ month, amount }))
-  }, [activity])
-
-  const vendorStats = useMemo(() => {
-    const sales: Record<string, number> = {}
-    activity.forEach(txn => {
-      const name = txn.vendorName || 'Unknown Vendor'
-      sales[name] = (sales[name] || 0) + (txn.amount || 0)
-    })
-
-    return Object.entries(sales)
-      .map(([name, amount]) => ({ name, sales: amount }))
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 5)
-  }, [activity])
+  const { data: stats = { students: 0, activeVendors: 0, offers: 0, vendorsWithOffers: 0, vendorsWithoutOffers: 0, transactions: 0 } } = useQuery(dashboardStatsQueryOptions())
+  const { data: activity = [] } = useQuery(liveFeedQueryOptions())
+  const { data: revenueData = [] } = useQuery(monthlyRevenueQueryOptions())
+  const { data: vendorStats = [] } = useQuery(topVendorsQueryOptions())
 
   const offersByCategory = [
     { name: 'With Offers', value: stats.vendorsWithOffers },
@@ -151,11 +212,11 @@ function AdminDashboard() {
   ]
 
   const recentTxns = activity
-    .filter((txn) => 
+    .filter(txn =>
       txn.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      txn.vendorName.toLowerCase().includes(searchQuery.toLowerCase())
+      txn.vendorName.toLowerCase().includes(searchQuery.toLowerCase()),
     )
-    .slice(0, 15) // take top 15 most recent
+    .slice(0, 15)
 
   return (
     <div className="flex-1 overflow-y-auto bg-white font-sans">
@@ -261,13 +322,13 @@ function AdminDashboard() {
                 {offersByCategory.length > 0 && stats.offers > 0 && (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie 
-                        data={offersByCategory} 
-                        cx="50%" 
-                        cy="50%" 
-                        innerRadius={65} 
-                        outerRadius={85} 
-                        paddingAngle={8} 
+                      <Pie
+                        data={offersByCategory}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={85}
+                        paddingAngle={8}
                         dataKey="value"
                         stroke="none"
                       >
@@ -330,7 +391,7 @@ function AdminDashboard() {
             </div>
             <div className="flex flex-col gap-2.5 max-h-70 overflow-y-auto pr-1 overflow-x-hidden">
               {recentTxns.length > 0 ? (
-                recentTxns.map((txn: any) => (
+                recentTxns.map(txn => (
                   <div key={txn.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-sm transition-all group">
                     <div className="flex items-center gap-3.5 overflow-hidden">
                       <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-brand-green shadow-sm group-hover:bg-brand-green group-hover:text-white group-hover:border-brand-green transition-all">

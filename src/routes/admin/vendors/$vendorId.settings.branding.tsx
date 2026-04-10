@@ -102,7 +102,7 @@ function BrandingSettingsComponent() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#18B852] border-t-transparent" />
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-green border-t-transparent" />
             </div>
         )
     }
@@ -118,7 +118,7 @@ function BrandingSettingsComponent() {
             <div className="flex justify-end gap-4 pt-4 border-t">
                 <Button variant="outline" onClick={() => setFormData(vendor)}>Reset Changes</Button>
                 <Button
-                    className="bg-[#18B852] hover:bg-[#18B852] text-white gap-2"
+                    className="bg-brand-green hover:bg-brand-green/90 text-white gap-2"
                     onClick={handleSave}
                     disabled={updateMutation.isPending}
                 >

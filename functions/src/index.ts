@@ -14,6 +14,8 @@ initializeApp();
 
 setGlobalOptions({maxInstances: 10});
 
+const REGION = "me-central1";
+
 // Helper: Generate unique 6-char creator code
 const generateCreatorCode = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -121,7 +123,7 @@ async function doCreateStudentUser(input: CreateStudentInput) {
 }
 
 export const createVendorUser = onCall(
-  {region: "me-central1", cors: true},
+  {region: REGION, cors: true},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 
@@ -175,7 +177,7 @@ export const createVendorUser = onCall(
 );
 
 export const deleteVendorUser = onCall(
-  {region: "me-central1", cors: true},
+  {region: REGION, cors: true},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 
@@ -224,7 +226,7 @@ export const deleteVendorUser = onCall(
 );
 
 export const createStudentUser = onCall(
-  {region: "me-central1", cors: true},
+  {region: REGION, cors: true},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 
@@ -251,7 +253,7 @@ export const createStudentUser = onCall(
 );
 
 export const deleteStudentUser = onCall(
-  {region: "me-central1", cors: true},
+  {region: REGION, cors: true},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 
@@ -315,7 +317,7 @@ export const deleteStudentUser = onCall(
 );
 
 export const approveVerificationRequest = onCall(
-  {region: "me-central1", cors: true, secrets: ["RESEND_API_KEY"]},
+  {region: REGION, cors: true, secrets: ["RESEND_API_KEY"]},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 
@@ -420,7 +422,7 @@ export const approveVerificationRequest = onCall(
 );
 
 export const rejectVerificationRequest = onCall(
-  {region: "me-central1", cors: true},
+  {region: REGION, cors: true},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 
@@ -480,7 +482,7 @@ export const rejectVerificationRequest = onCall(
 );
 
 export const deleteVerificationRequest = onCall(
-  {region: "me-central1", cors: true},
+  {region: REGION, cors: true},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 
@@ -540,7 +542,7 @@ export const deleteVerificationRequest = onCall(
 );
 
 export const sendNotification = onCall(
-  {region: "me-central1", cors: true},
+  {region: REGION, cors: true},
   async (request: CallableRequest) => {
     const {auth, data} = request;
 

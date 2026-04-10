@@ -27,12 +27,13 @@ import {
 } from '@/components/ui/dialog'
 import { Search, Upload, Eye, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchTransactions, type Transaction } from './index'
+import { fetchTransactions, type Transaction, type TransactionSearch } from './index'
 import { Badge } from '@/components/ui/badge'
 import { db } from '@/firebase/config'
 import { deleteDoc, doc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import { useState } from 'react'
+import { STALE_TIME } from '@/lib/constants'
 
 export const Route = createLazyFileRoute('/admin/transactions/')({
     component: RouteComponent,
@@ -63,7 +64,7 @@ function RouteComponent() {
     const { data, isLoading: isQueryLoading } = useQuery({
         queryKey: ['transactions-list', page, pageSize, vendorName, sort],
         queryFn: () => fetchTransactions(page, pageSize, vendorName, sort),
-        staleTime: 1000 * 60 * 5,
+        staleTime: STALE_TIME.MEDIUM,
     })
 
     const deleteMutation = useMutation({
@@ -88,7 +89,7 @@ function RouteComponent() {
     const hasNextPage = page * pageSize < totalTransactions
     const hasPrevPage = page > 1
 
-    const updateSearch = (updates: Record<string, any>) => {
+    const updateSearch = (updates: Partial<TransactionSearch>) => {
         navigate({
             to: '/admin/transactions',
             search: { page: 1, pageSize, vendorName, sort, ...updates },
@@ -123,7 +124,7 @@ function RouteComponent() {
                         <path
                             d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2Z"
                             fill="currentColor"
-                            fillOpacity="0.1"
+                            fillOpacity={0.1}
                         />
                         <path
                             d="M7 12H17M17 12L13 8M17 12L13 16"
@@ -213,7 +214,7 @@ function RouteComponent() {
                             <TableRow>
                                 <TableCell colSpan={8} className="text-center py-10">
                                     <div className="flex flex-col items-center gap-2">
-                                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#18B852] border-t-transparent" />
+                                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-green border-t-transparent" />
                                         <p className="text-muted-foreground font-medium">Loading transactions...</p>
                                     </div>
                                 </TableCell>
@@ -246,7 +247,7 @@ function RouteComponent() {
                                         <div className="flex flex-col gap-1">
                                             <Badge
                                                 variant={(tx.type === 'offer_redemption' || tx.type === 'offer') ? 'default' : 'secondary'}
-                                                className={(tx.type === 'offer_redemption' || tx.type === 'offer') ? 'bg-[#18B852] hover:bg-[#18B852]/90 w-fit' : 'bg-blue-500 hover:bg-blue-500/90 w-fit'}
+                                                className={(tx.type === 'offer_redemption' || tx.type === 'offer') ? 'bg-brand-green hover:bg-brand-green/90 w-fit' : 'bg-blue-500 hover:bg-blue-500/90 w-fit'}
                                             >
                                                 {tx.type.replace(/_/g, ' ')}
                                             </Badge>
@@ -406,12 +407,12 @@ function RouteComponent() {
                 </DialogContent>
             </Dialog>
 
-            {/* Simple Pagination */}
+            {/* Pagination */}
             {(hasPrevPage || hasNextPage) && (
                 <div className="flex items-center justify-center gap-4 pt-4">
                     <Link
                         from="/admin/transactions/"
-                        search={(prev: any) => ({
+                        search={(prev: TransactionSearch) => ({
                             ...prev,
                             page: Math.max(1, page - 1),
                         })}
@@ -434,7 +435,7 @@ function RouteComponent() {
 
                     <Link
                         from="/admin/transactions/"
-                        search={(prev: any) => ({
+                        search={(prev: TransactionSearch) => ({
                             ...prev,
                             page: page + 1,
                         })}

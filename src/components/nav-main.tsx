@@ -27,7 +27,7 @@ export function NavMain({
               <SidebarMenuButton
                 tooltip={item.title}
                 asChild
-                className="h-12 px-4 rounded-xl transition-all data-[active=true]:bg-[#18B852] data-[active=true]:text-white data-[active=true]:hover:bg-[#18B852] hover:bg-slate-100 group"
+                className="h-12 px-4 rounded-xl transition-all data-[active=true]:bg-brand-green data-[active=true]:text-white data-[active=true]:hover:bg-brand-green/90 hover:bg-slate-100 group"
               >
                 <Link
                   to={item.url}

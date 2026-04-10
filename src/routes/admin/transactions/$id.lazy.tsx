@@ -47,7 +47,7 @@ function TransactionDetailsRoute() {
                         variant="default"
                         className={`text-sm px-4 py-1.5 rounded-full font-semibold uppercase tracking-wider ${
                             transaction.type?.includes('offer')
-                                ? 'bg-[#18B852] hover:bg-[#18B852]/90 text-white' 
+                                ? 'bg-brand-green hover:bg-brand-green/90 text-white' 
                                 : 'bg-blue-600 hover:bg-blue-600/90 text-white'
                         }`}
                     >
@@ -127,7 +127,7 @@ function TransactionDetailsRoute() {
                                                 <span className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Final Net Paid</span>
                                                 <span className="text-lg font-bold text-gray-900">Final Total</span>
                                             </div>
-                                            <span className="text-2xl font-black text-[#18B852]">
+                                            <span className="text-2xl font-black text-brand-green">
                                                 QAR {transaction.finalAmount ?? transaction.totalAmount?.toString().replace(/[^\d.]/g, '')}
                                             </span>
                                         </div>
@@ -186,16 +186,16 @@ function TransactionDetailsRoute() {
                     {(transaction.cashbackAmount !== undefined || transaction.creatorCashbackAmount !== undefined || transaction.creatorCode) && (
                         <div className="space-y-4 pt-6 border-t border-gray-100">
                             <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900">
-                                <Tag className="h-5 w-5 text-[#18B852]" />
+                                <Tag className="h-5 w-5 text-brand-green" />
                                 Rewards & Commission
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <div className="bg-gradient-to-br from-green-50 to-green-100/30 p-5 rounded-2xl border border-green-200/50 flex flex-col justify-center space-y-2 shadow-sm transition-transform hover:scale-[1.02]">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-[#18B852] animate-pulse"></div>
-                                        <p className="text-[10px] text-[#18B852] font-black uppercase tracking-widest">User Cashback Earned</p>
+                                        <div className="w-2.5 h-2.5 rounded-full bg-brand-green animate-pulse"></div>
+                                        <p className="text-[10px] text-brand-green font-black uppercase tracking-widest">User Cashback Earned</p>
                                     </div>
-                                    <p className="font-black text-4xl text-[#18B852]">QAR {transaction.cashbackAmount || 0}</p>
+                                    <p className="font-black text-4xl text-brand-green">QAR {transaction.cashbackAmount || 0}</p>
                                 </div>
                                 
                                 <div className="bg-gradient-to-br from-amber-50 to-amber-100/30 p-5 rounded-2xl border border-amber-200/50 flex flex-col justify-center space-y-2 shadow-sm transition-transform hover:scale-[1.02]">

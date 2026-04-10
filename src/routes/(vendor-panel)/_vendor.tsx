@@ -9,9 +9,7 @@ import { useAuth } from '../../auth'
 
 export const Route = createFileRoute('/(vendor-panel)/_vendor')({
   beforeLoad: ({ context, location }) => {
-    // Check if user is authenticated
     if (!context.auth.isAuthenticated) {
-      console.log('User not authenticated, redirecting to login...')
       throw redirect({
         to: '/login',
         search: {
@@ -19,7 +17,6 @@ export const Route = createFileRoute('/(vendor-panel)/_vendor')({
         },
       })
     }
-    console.log('User authenticated, proceeding...')
   },
   component: AuthLayout,
 })

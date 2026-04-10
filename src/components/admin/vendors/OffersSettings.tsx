@@ -318,7 +318,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
                         disabled={saveMutation.isPending}
                         className={`rounded-full px-8 h-12 text-base font-bold text-white shadow-lg flex items-center gap-2 ${editingIndex !== null
                             ? 'bg-[#8B5CF6] hover:bg-[#8B5CF6]/90 shadow-purple-200'
-                            : 'bg-[#18B852] hover:bg-[#18B852]/90 shadow-green-200'
+                            : 'bg-brand-green hover:bg-brand-green/90 shadow-green-200'
                             }`}
                     >
                         {saveMutation.isPending ? (
@@ -344,7 +344,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
                     <Card className="flex flex-col w-[340px] h-[300px] rounded-[32px] border-none shadow-[0_8px_30px_rgb(0,0,0,0.06)] bg-white p-0 overflow-hidden group transition-all duration-300 hover:shadow-[0_20px_40px_rgba(24,184,82,0.1)] relative">
                         {/* Discount Badge */}
                         <div className="h-[80px] w-full bg-slate-50 relative flex items-center justify-center">
-                            <span className="text-2xl font-bold text-[#18B852]">
+                            <span className="text-2xl font-bold text-brand-green">
                                 {offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `$${offer.discountValue} OFF`}
                             </span>
                         </div>
@@ -358,7 +358,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
                             </p>
 
                             <Button
-                                className="mt-auto w-full bg-[#18B852] hover:bg-[#18B852]/90 text-white rounded-xl py-5 text-[15px] font-bold gap-2 shadow-[0_4px_15px_rgba(24,184,82,0.3)] transition-all active:scale-[0.98]"
+                                className="mt-auto w-full bg-brand-green hover:bg-brand-green/90 text-white rounded-xl py-5 text-[15px] font-bold gap-2 shadow-[0_4px_15px_rgba(24,184,82,0.3)] transition-all active:scale-[0.98]"
                                 onClick={() => setEditingIndex(index)}
                             >
                                 <SquarePen className="h-4 w-4" />
@@ -390,8 +390,8 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
                                 />
                                 <path d="M40 60 L60 40 M42 42 A3 3 0 1 1 42 41.9 M58 58 A3 3 0 1 1 58 57.9" stroke="#18B852" strokeWidth="6" strokeLinecap="round" />
                             </svg>
-                            <Plus className="absolute top-0 right-0 h-8 w-8 text-[#18B852] stroke-[3]" />
-                            <Plus className="absolute bottom-1 left-2 h-6 w-6 text-[#18B852] stroke-[3]" />
+                            <Plus className="absolute top-0 right-0 h-8 w-8 text-brand-green stroke-[3]" />
+                            <Plus className="absolute bottom-1 left-2 h-6 w-6 text-brand-green stroke-[3]" />
                         </div>
                     </div>
 
@@ -402,7 +402,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
 
                 <Button
                     onClick={() => setIsCreating(true)}
-                    className="w-full bg-[#18B852] hover:bg-[#18B852] text-white rounded-[20px] py-7 text-[16px] font-bold shadow-[0_4px_15px_rgba(124,58,237,0.3)] transition-all active:scale-[0.98]"
+                    className="w-full bg-brand-green hover:bg-brand-green/90 text-white rounded-[20px] py-7 text-[16px] font-bold shadow-[0_4px_15px_rgba(124,58,237,0.3)] transition-all active:scale-[0.98]"
                 >
                     Create New Offer
                 </Button>

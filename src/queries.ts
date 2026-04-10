@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { db } from '@/firebase/config'
-import { doc, getDoc, query, collection, where, getDocs, Timestamp, DocumentReference, orderBy, getAggregateFromServer, sum, count } from 'firebase/firestore'
+import { doc, getDoc, query, collection, where, getDocs, Timestamp, DocumentReference, orderBy, limit, getAggregateFromServer, sum, count } from 'firebase/firestore'
+import { STALE_TIME } from '@/lib/constants'
 
 export interface EmbeddedOffer {
     titleEn: string
@@ -77,25 +78,23 @@ export const vendorQueryOptions = (vendorId: string) => queryOptions({
             profilePicture: data.profilePicture || data.logo || data.logoUrl || ''
         } as Vendor
     },
-    staleTime: 1000 * 60 * 15,
+    staleTime: STALE_TIME.EXTENDED,
 })
 
 export const vendorTransactionsQueryOptions = (vendorId: string) => queryOptions({
     queryKey: ['vendor-transactions', vendorId],
     queryFn: async () => {
         if (!vendorId) return []
-        // NOTE: If you decide to add pagination later via startAfter()/limit(50), 
-        // you would simply replace this query with the paginated version.
-        // For now, this just gets history bounded implicitly by their lifetime.
         const q = query(
-            collection(db, 'transactions'), 
-            where('vendorId', '==', vendorId), 
-            orderBy('createdAt', 'desc')
+            collection(db, 'transactions'),
+            where('vendorId', '==', vendorId),
+            orderBy('createdAt', 'desc'),
+            limit(50),
         )
         const snapshot = await getDocs(q)
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Transaction[]
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: STALE_TIME.MEDIUM,
 })
 
 export const vendorStatsQueryOptions = (vendorId: string) => queryOptions({
@@ -132,7 +131,7 @@ export const vendorStatsQueryOptions = (vendorId: string) => queryOptions({
             revenueTrend: 8.4
         } as VendorStats
     },
-    staleTime: 1000 * 60 * 10,
+    staleTime: STALE_TIME.LONG,
 })
 
 export const vendorChartDataQueryOptions = (vendorId: string, range: ChartRange) => queryOptions({
@@ -178,5 +177,5 @@ export const vendorChartDataQueryOptions = (vendorId: string, range: ChartRange)
 
         return Object.values(result)
     },
-    staleTime: 1000 * 60 * 10,
+    staleTime: STALE_TIME.LONG,
 })

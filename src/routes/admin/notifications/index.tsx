@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { httpsCallable } from 'firebase/functions'
-import { collection, getDocs, query, orderBy } from 'firebase/firestore'
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { Send, Loader2, Bell, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
@@ -41,7 +41,7 @@ function NotificationsPage() {
     const { data: notifications, isLoading } = useQuery({
         queryKey: ['notifications'],
         queryFn: async () => {
-            const q = query(collection(db, 'notifications'), orderBy('sentAt', 'desc'))
+            const q = query(collection(db, 'notifications'), orderBy('sentAt', 'desc'), limit(50))
             const snapshot = await getDocs(q)
             return snapshot.docs.map((doc) => ({
                 id: doc.id,

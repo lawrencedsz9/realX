@@ -53,7 +53,6 @@ export function AuthContextProvider({
 
 
   const logout = React.useCallback(async () => {
-    console.log('Logging out...')
     await signOut(auth)
     setUser(null)
     setIsInitialLoading(false)

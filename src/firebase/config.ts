@@ -1,8 +1,9 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage';
+import { getStorage } from 'firebase/storage'
 import { getFunctions } from 'firebase/functions'
+import { FUNCTIONS_REGION } from '@/lib/constants'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_PUBLIC_FIREBASE_API_KEY,
@@ -16,6 +17,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
-export const functions = getFunctions(app, 'me-central1')
-export const storage = getStorage(app);
+export const functions = getFunctions(app, FUNCTIONS_REGION)
+export const storage = getStorage(app)
 

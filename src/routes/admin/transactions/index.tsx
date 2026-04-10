@@ -1,7 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { db } from '@/firebase/config'
-import { collection, getDocs, query, limit, orderBy } from 'firebase/firestore'
+import {
+    collection, getDocs, query, limit, orderBy, where,
+    getCountFromServer, startAfter,
+    type QueryConstraint,
+} from 'firebase/firestore'
+import { formatTimestamp } from '@/lib/format-timestamp'
 
 const transactionsSearchSchema = z.object({
     pageSize: z.number().catch(10),
@@ -9,6 +14,8 @@ const transactionsSearchSchema = z.object({
     vendorName: z.string().optional().catch(undefined),
     sort: z.enum(['date_asc', 'date_desc', 'amount_asc', 'amount_desc', 'vendor_asc', 'vendor_desc']).optional().catch(undefined),
 })
+
+export type TransactionSearch = z.infer<typeof transactionsSearchSchema>
 
 export const Route = createFileRoute('/admin/transactions/')({
     validateSearch: (search) => transactionsSearchSchema.parse(search),
@@ -49,39 +56,57 @@ export interface Transaction {
 
 type SortOption = 'date_asc' | 'date_desc' | 'amount_asc' | 'amount_desc' | 'vendor_asc' | 'vendor_desc'
 
+function getOrderBy(sort?: SortOption): { field: string; dir: 'asc' | 'desc' } {
+    switch (sort) {
+        case 'date_asc': return { field: 'createdAt', dir: 'asc' }
+        case 'amount_asc': return { field: 'totalAmount', dir: 'asc' }
+        case 'amount_desc': return { field: 'totalAmount', dir: 'desc' }
+        case 'vendor_asc': return { field: 'vendorName', dir: 'asc' }
+        case 'vendor_desc': return { field: 'vendorName', dir: 'desc' }
+        default: return { field: 'createdAt', dir: 'desc' }
+    }
+}
+
 export async function fetchTransactions(page: number, pageSize: number, vendorName?: string, sort?: SortOption) {
-    console.log(`Loading page ${page}...`)
     const collRef = collection(db, 'transactions')
+    const { field, dir } = getOrderBy(sort)
 
-    // Always fetch more than needed to allow client-side filtering
-    const fetchLimit = vendorName ? Math.min(pageSize * 10, 500) : page * pageSize
-    const q = query(
-        collRef,
-        orderBy('createdAt', 'desc'),
-        limit(fetchLimit)
-    )
+    // Build base constraints
+    const baseConstraints: QueryConstraint[] = [orderBy(field, dir)]
+    if (vendorName) {
+        baseConstraints.push(where('vendorName', '==', vendorName))
+    }
 
-    const snapshot = await getDocs(q)
+    // Get total count (1 read via aggregation)
+    const countConstraints: QueryConstraint[] = []
+    if (vendorName) countConstraints.push(where('vendorName', '==', vendorName))
+    const countSnap = await getCountFromServer(query(collRef, ...countConstraints))
+    const totalCount = countSnap.data().count
 
-    let allDocs = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data()
-        const id = docSnap.id
-
-        let formattedDate = ''
-        if (data.createdAt) {
-            if (typeof data.createdAt === 'string') {
-                formattedDate = new Date(data.createdAt).toLocaleString()
-            } else if (data.createdAt.toDate) {
-                formattedDate = data.createdAt.toDate().toLocaleString()
-            }
+    // Cursor-based pagination
+    if (page > 1) {
+        // Fetch docs up to the end of previous page to get the cursor
+        const cursorConstraints = [...baseConstraints, limit((page - 1) * pageSize)]
+        const cursorSnap = await getDocs(query(collRef, ...cursorConstraints))
+        if (cursorSnap.docs.length > 0) {
+            const lastDoc = cursorSnap.docs[cursorSnap.docs.length - 1]
+            baseConstraints.push(startAfter(lastDoc))
         }
+    }
+
+    baseConstraints.push(limit(pageSize))
+    const snapshot = await getDocs(query(collRef, ...baseConstraints))
+
+    const transactions = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data()
+        const dateValue = formatTimestamp(data.createdAt)
 
         return {
-            id,
+            id: docSnap.id,
             ...data,
-            date: formattedDate || 'Unknown Date',
-            rawDate: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-            transactionId: data.pin || id,
+            date: dateValue.toLocaleString() || 'Unknown Date',
+            rawDate: dateValue.toISOString(),
+            transactionId: data.pin || docSnap.id,
             vendorName: data.vendorName || 'Unknown Vendor',
             totalAmount: data.totalAmount ? `QAR ${data.totalAmount}` : 'QAR 0',
             totalAmountNum: data.totalAmount || 0,
@@ -89,40 +114,5 @@ export async function fetchTransactions(page: number, pageSize: number, vendorNa
         } as Transaction
     })
 
-    // Filter by vendor name
-    if (vendorName) {
-        const lowerFilter = vendorName.toLowerCase()
-        allDocs = allDocs.filter(tx => tx.vendorName.toLowerCase().includes(lowerFilter))
-    }
-
-    // Sort
-    if (sort) {
-        const sorted = [...allDocs]
-        switch (sort) {
-            case 'date_asc':
-                sorted.sort((a, b) => (a.rawDate || '').localeCompare(b.rawDate || ''))
-                break
-            case 'date_desc':
-                sorted.sort((a, b) => (b.rawDate || '').localeCompare(a.rawDate || ''))
-                break
-            case 'amount_asc':
-                sorted.sort((a, b) => (a.totalAmountNum || 0) - (b.totalAmountNum || 0))
-                break
-            case 'amount_desc':
-                sorted.sort((a, b) => (b.totalAmountNum || 0) - (a.totalAmountNum || 0))
-                break
-            case 'vendor_asc':
-                sorted.sort((a, b) => a.vendorName.localeCompare(b.vendorName))
-                break
-            case 'vendor_desc':
-                sorted.sort((a, b) => b.vendorName.localeCompare(a.vendorName))
-                break
-        }
-        allDocs = sorted
-    }
-
-    const filteredCount = allDocs.length
-    const pageDocs = allDocs.slice((page - 1) * pageSize, page * pageSize)
-
-    return { transactions: pageDocs, totalCount: filteredCount }
+    return { transactions, totalCount }
 }
