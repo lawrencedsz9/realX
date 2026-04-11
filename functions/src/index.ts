@@ -39,7 +39,6 @@ interface VendorMapEntry {
 function buildMapEntry(
   data: FirebaseFirestore.DocumentData,
 ): VendorMapEntry | null {
-  if (!data.isActive) return null;
   const lat = data.latitude;
   const lng = data.longitude;
   if (
@@ -217,6 +216,7 @@ export const createVendorUser = onCall(
     await db.collection("vendors").doc(user.uid).set({
       name,
       email,
+      status: "Active",
       createdAt: new Date(),
     });
 
