@@ -110,7 +110,7 @@ function RouteComponent() {
             queryClient.invalidateQueries({ queryKey: ['vendors-all'] })
             setForm({ name: '', email: '', password: '' })
             setOpen(false)
-            refreshVendorList()
+            void refreshVendorList()
         },
         onError: (error) => {
             console.error('Error adding vendor: ', error)
@@ -125,7 +125,7 @@ function RouteComponent() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['vendors-all'] })
-            refreshVendorList()
+            void refreshVendorList()
         }
     })
 
@@ -138,7 +138,7 @@ function RouteComponent() {
             queryClient.invalidateQueries({ queryKey: ['vendors-all'] })
             setDeleteConfirmOpen(false)
             setVendorToDelete(null)
-            refreshVendorList()
+            void refreshVendorList()
         },
         onError: (error) => {
             console.error('Error deleting vendor: ', error)

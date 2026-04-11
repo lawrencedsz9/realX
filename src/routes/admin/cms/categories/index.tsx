@@ -13,18 +13,19 @@ import {
 import { db, storage } from '@/firebase/config'
 import {
     collection,
-    getDocs,
     doc,
     deleteDoc,
     addDoc,
     updateDoc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, deleteObject } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Category } from '@/types/categories'
+import { categoriesQueryOptions } from '@/queries'
+import { uploadImage } from '@/lib/upload'
 
 export const Route = createFileRoute('/admin/cms/categories/')({
     component: CategoriesOverview,
@@ -37,19 +38,7 @@ function CategoriesOverview() {
     const [uploading, setUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const categoriesQuery = useQuery({
-        queryKey: ['categories'],
-        queryFn: async () => {
-            const categoriesRef = collection(db, 'categories')
-            const querySnapshot = await getDocs(categoriesRef)
-            const cats: Category[] = []
-            querySnapshot.forEach((doc) => {
-                cats.push({ id: doc.id, ...doc.data() } as Category)
-            })
-            return cats.sort((a, b) => (a.order || 0) - (b.order || 0))
-        },
-        staleTime: 1000 * 60 * 5,
-    })
+    const categoriesQuery = useQuery(categoriesQueryOptions())
 
     useEffect(() => {
         if (categoriesQuery.data) {
@@ -79,9 +68,11 @@ function CategoriesOverview() {
     const addCategoryMutation = useMutation({
         mutationFn: async (file: File) => {
             setUploading(true)
-            const storageRef = ref(storage, `categories/${Date.now()}_${file.name}`)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `categories/${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: 1024, quality: 0.8 }
+            )
 
             const newCatData = {
                 nameEnglish: 'New Category',

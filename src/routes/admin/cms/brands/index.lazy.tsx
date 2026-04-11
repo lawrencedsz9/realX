@@ -16,13 +16,14 @@ import {
     doc,
     setDoc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, deleteObject } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { BrandItem } from '@/types/brands'
 import { getVendorList, type VendorOption } from '@/lib/vendorList'
+import { uploadImage } from '@/lib/upload'
 
 export const Route = createLazyFileRoute('/admin/cms/brands/')({
     component: BrandsManagement,
@@ -104,9 +105,11 @@ function BrandsManagement() {
 
         setUploading(brandId)
         try {
-            const storageRef = ref(storage, `brands/${brandId}/${Date.now()}_${file.name}`)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `brands/${brandId}/${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: 512, quality: 0.8 }
+            )
 
             const updatedBrands = brands.map(b => {
                 if (b.id === brandId) {

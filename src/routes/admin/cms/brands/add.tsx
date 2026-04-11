@@ -6,17 +6,17 @@ import {
     Loader2,
     Save
 } from 'lucide-react'
-import { db, storage } from '@/firebase/config'
+import { db } from '@/firebase/config'
 import {
     doc,
     getDoc,
     setDoc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { BrandItem } from '@/types/brands'
 import { getVendorList, type VendorOption } from '@/lib/vendorList'
+import { uploadImage } from '@/lib/upload'
 
 export const Route = createFileRoute('/admin/cms/brands/add')({
     component: AddBrandPage,
@@ -46,9 +46,11 @@ function AddBrandPage() {
 
         setUploading(true)
         try {
-            const storageRef = ref(storage, `brands/${brand.id}/${Date.now()}_${file.name}`)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `brands/${brand.id}/${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: 512, quality: 0.8 }
+            )
 
             setBrand(prev => ({
                 ...prev,

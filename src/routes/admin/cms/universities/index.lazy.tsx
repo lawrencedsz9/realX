@@ -18,12 +18,13 @@ import {
     doc,
     setDoc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, deleteObject } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Link } from '@tanstack/react-router'
 import type { UniversityItem } from '@/types/universities'
+import { uploadImage } from '@/lib/upload'
 
 export const Route = createLazyFileRoute('/admin/cms/universities/')({
     component: UniversitiesManagement,
@@ -103,10 +104,11 @@ function UniversitiesManagement() {
 
         setUploading({ id, type })
         try {
-            const path = `universities/${id}/${type}_${Date.now()}_${file.name}`
-            const storageRef = ref(storage, path)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `universities/${id}/${type}_${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: type === 'logo' ? 512 : 1920, quality: 0.8 }
+            )
 
             const updatedUniversities = universities.map(u => {
                 if (u.id === id) {

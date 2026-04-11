@@ -6,17 +6,17 @@ import {
     Loader2,
     Save
 } from 'lucide-react'
-import { db, storage } from '@/firebase/config'
+import { db } from '@/firebase/config'
 import {
     doc,
     getDoc,
     setDoc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { BannerItem } from '@/types/banners'
 import { getVendorList, type VendorOption } from '@/lib/vendorList'
+import { uploadImage } from '@/lib/upload'
 
 export const Route = createFileRoute('/admin/cms/banners/add')({
     component: AddBannerPage,
@@ -49,9 +49,11 @@ function AddBannerPage() {
 
         setUploading(type)
         try {
-            const storageRef = ref(storage, `banners/${type}/${Date.now()}_${file.name}`)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `banners/${type}/${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: 1920, quality: 0.8 }
+            )
 
             setBanner(prev => ({
                 ...prev,

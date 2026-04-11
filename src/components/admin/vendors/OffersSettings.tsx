@@ -137,7 +137,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
             toast.success(editingIndex !== null ? 'Offer updated' : 'Offer created')
             setIsCreating(false)
             setEditingIndex(null)
-            refreshVendorList()
+            void refreshVendorList()
         },
         onError: () => {
             toast.error('Failed to save offer')
@@ -165,7 +165,7 @@ export function OffersSettings({ vendorId }: OffersSettingsProps) {
             queryClient.invalidateQueries({ queryKey: ['vendor', vendorId] })
             toast.success('Offer deleted')
             setEditingIndex(null)
-            refreshVendorList()
+            void refreshVendorList()
         },
         onError: () => {
             toast.error('Failed to delete offer')

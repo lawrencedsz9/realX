@@ -8,16 +8,16 @@ import {
     Type,
     Link as LinkIcon
 } from 'lucide-react'
-import { db, storage } from '@/firebase/config'
+import { db } from '@/firebase/config'
 import {
     doc,
     getDoc,
     setDoc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { UniversityItem } from '@/types/universities'
+import { uploadImage } from '@/lib/upload'
 
 export const Route = createFileRoute('/admin/cms/universities/add')({
     component: AddUniversityPage,
@@ -47,10 +47,11 @@ function AddUniversityPage() {
 
         setUploading(type)
         try {
-            const path = `universities/${university.id}/${type}_${Date.now()}_${file.name}`
-            const storageRef = ref(storage, path)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `universities/${university.id}/${type}_${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: type === 'logo' ? 512 : 1920, quality: 0.8 }
+            )
 
             setUniversity(prev => ({
                 ...prev,

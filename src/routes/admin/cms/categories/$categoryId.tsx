@@ -10,19 +10,19 @@ import {
     Image as ImageIcon,
     FolderOpen
 } from 'lucide-react'
-import { db, storage } from '@/firebase/config'
+import { db } from '@/firebase/config'
 import {
     doc,
     getDoc,
     updateDoc
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Category, SubCategory } from '@/types/categories'
+import { uploadImage } from '@/lib/upload'
 
 interface SubCategoryItemProps {
     sub: SubCategory
@@ -214,9 +214,11 @@ function ManageCategory() {
 
         setUploadingCover(true)
         try {
-            const storageRef = ref(storage, `categories/covers/${Date.now()}_${file.name}`)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `categories/covers/${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: 512, quality: 0.8 }
+            )
 
             handleUpdateCategory({ imageUrl: downloadURL })
             toast.success('Cover image uploaded. Click Save to persist.')
@@ -279,9 +281,11 @@ function ManageCategory() {
 
         setUploadingSubId(index)
         try {
-            const storageRef = ref(storage, `categories/subcategories/${Date.now()}_${file.name}`)
-            const snapshot = await uploadBytes(storageRef, file)
-            const downloadURL = await getDownloadURL(snapshot.ref)
+            const downloadURL = await uploadImage(
+                `categories/subcategories/${Date.now()}_${file.name}`,
+                file,
+                { maxWidth: 512, quality: 0.8 }
+            )
 
             const updatedSubs = category.subcategories.map((sub, i) =>
                 i === index ? { ...sub, imageUrl: downloadURL } : sub
