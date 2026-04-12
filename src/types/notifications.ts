@@ -6,5 +6,8 @@ export interface NotificationRecord {
     topic: string
     sentBy: string
     sentAt: { seconds: number; nanoseconds: number }
-    messageId: string
+    messageId?: string
+    sentCount?: number
+    totalRegistered?: number
+    receiptIds?: string[]
 }

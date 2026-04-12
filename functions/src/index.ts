@@ -7,7 +7,7 @@ import {initializeApp} from "firebase-admin/app";
 import {getAuth} from "firebase-admin/auth";
 import {getFirestore, FieldValue} from "firebase-admin/firestore";
 import {getStorage} from "firebase-admin/storage";
-import {getMessaging} from "firebase-admin/messaging";
+import {Expo} from "expo-server-sdk";
 import {Resend} from "resend";
 import {geohashForLocation} from "geofire-common";
 
@@ -611,73 +611,179 @@ export const sendNotification = onCall(
 
     const {title, body, imageUrl, topic} = data;
 
-    if (!title || !body || !topic) {
+    if (!title || !body) {
       throw new HttpsError(
         "invalid-argument",
-        "title, body, and topic are required"
+        "title and body are required"
       );
     }
 
     const db = getFirestore();
-    const messaging = getMessaging();
+    const expo = new Expo();
 
-    const isValidUrl = (url: string) => {
-      try {
-        new URL(url);
-        return true;
-      } catch {
-        return false;
-      }
-    };
+    // Fetch all registered Expo push tokens
+    const tokensSnapshot = await db.collection("pushTokens").get();
+    const allTokens = tokensSnapshot.docs.map(
+      (doc) => ({id: doc.id, token: doc.data().token as string})
+    );
 
-    const notification: {title: string; body: string; imageUrl?: string} = {
-      title,
-      body,
-    };
-    if (imageUrl && isValidUrl(imageUrl)) {
-      notification.imageUrl = imageUrl;
+    if (allTokens.length === 0) {
+      logger.info("No push tokens registered, skipping send");
+
+      // Store notification record even if no tokens
+      await db.collection("notifications").add({
+        title,
+        body,
+        imageUrl: imageUrl || null,
+        topic: topic || "all-users",
+        sentBy: auth.uid,
+        sentAt: new Date(),
+        sentCount: 0,
+        totalRegistered: 0,
+      });
+
+      return {success: true, sentCount: 0};
     }
 
-    const message = {
-      topic,
-      notification,
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-      android: {
-        notification: {
-          sound: "default",
-        },
-      },
-    };
+    // Filter to valid Expo push tokens
+    const validEntries = allTokens.filter((entry) =>
+      Expo.isExpoPushToken(entry.token)
+    );
 
-    const messageId = await messaging.send(message);
+    if (validEntries.length === 0) {
+      logger.warn("No valid Expo push tokens found");
+      return {success: true, sentCount: 0};
+    }
+
+    // Build push messages
+    const messages = validEntries.map((entry) => ({
+      to: entry.token,
+      title,
+      body,
+      sound: "default" as const,
+      data: {imageUrl: imageUrl || null},
+    }));
+
+    // Send in batches (SDK handles chunking automatically)
+    const tickets = await expo.sendPushNotificationsAsync(messages);
+
+    // Map token to Firestore doc ID for cleanup
+    const tokenToDocId = new Map<string, string>();
+    validEntries.forEach((entry) => {
+      tokenToDocId.set(entry.token, entry.id);
+    });
+
+    // Handle errors and collect receipt IDs
+    const invalidDocIds: string[] = [];
+    const receiptIds: string[] = [];
+
+    tickets.forEach((ticket, index) => {
+      if (ticket.status === "error") {
+        const details = ticket.details as {error?: string} | undefined;
+        if (
+          details?.error === "DeviceNotRegistered" ||
+          details?.error === "InvalidCredentials"
+        ) {
+          const docId = tokenToDocId.get(validEntries[index].token);
+          if (docId) invalidDocIds.push(docId);
+        }
+        logger.warn("Push ticket error", {
+          token: validEntries[index].token,
+          error: details,
+        });
+      } else if (ticket.id) {
+        receiptIds.push(ticket.id);
+      }
+    });
+
+    // Delete invalid tokens from Firestore
+    if (invalidDocIds.length > 0) {
+      const batch = db.batch();
+      invalidDocIds.forEach((docId) => {
+        batch.delete(db.collection("pushTokens").doc(docId));
+      });
+      await batch.commit();
+      logger.info("Deleted invalid push tokens", {
+        count: invalidDocIds.length,
+      });
+    }
 
     // Store notification record
     await db.collection("notifications").add({
       title,
       body,
       imageUrl: imageUrl || null,
-      topic,
+      topic: topic || "all-users",
       sentBy: auth.uid,
       sentAt: new Date(),
-      messageId,
+      sentCount: validEntries.length,
+      totalRegistered: allTokens.length,
+      receiptIds,
     });
 
     logger.info("Notification sent", {
       title,
-      topic,
-      messageId,
+      sentCount: validEntries.length,
+      totalRegistered: allTokens.length,
     });
 
     return {
       success: true,
-      messageId,
+      sentCount: validEntries.length,
     };
+  }
+);
+
+export const registerPushToken = onCall(
+  {region: REGION, cors: true},
+  async (request: CallableRequest) => {
+    const {auth, data} = request;
+
+    if (!auth) {
+      throw new HttpsError("unauthenticated", "User not authenticated");
+    }
+
+    const {token, platform} = data;
+
+    if (!token || typeof token !== "string") {
+      throw new HttpsError("invalid-argument", "token is required");
+    }
+
+    if (!Expo.isExpoPushToken(token)) {
+      throw new HttpsError("invalid-argument", "Invalid Expo push token");
+    }
+
+    const db = getFirestore();
+    const pushTokensRef = db.collection("pushTokens");
+
+    // Check if this token already exists (deduplication)
+    const existing = await pushTokensRef
+      .where("token", "==", token)
+      .limit(1)
+      .get();
+
+    if (!existing.empty) {
+      // Update existing record with latest userId and platform
+      await existing.docs[0].ref.update({
+        userId: auth.uid,
+        platform: platform || null,
+        updatedAt: new Date(),
+      });
+      return {success: true, action: "updated"};
+    }
+
+    // Create new token record
+    await pushTokensRef.add({
+      token,
+      userId: auth.uid,
+      platform: platform || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    logger.info("Push token registered", {userId: auth.uid});
+
+    return {success: true, action: "created"};
   }
 );
 

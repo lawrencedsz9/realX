@@ -91,6 +91,12 @@ match /notifications/{notificationId} {
   allow write: if isAdmin();
 }
 
+// ─── pushTokens collection ────────────────────────────────────────────
+match /pushTokens/{tokenId} {
+  allow read: if isAdmin();
+  allow write: if false;
+}
+
 // ─── otps collection (admin SDK only) ──────────────────────────────────
 match /otps/{email} {
   allow read, write: if false;
