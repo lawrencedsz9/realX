@@ -620,7 +620,7 @@ function RouteComponent() {
                                 {approveForm.role === 'creator' && (
                                     <div className="rounded-lg border border-brand-green/30 bg-brand-green/5 p-3">
                                         <p className="text-sm text-muted-foreground">
-                                            A unique 6-character creator code will be automatically generated for this account upon creation.
+                                            A unique 4-character creator code will be automatically generated for this account upon creation.
                                         </p>
                                     </div>
                                 )}

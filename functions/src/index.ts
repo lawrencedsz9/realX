@@ -60,14 +60,13 @@ function buildMapEntry(
   };
 }
 
-// Helper: Generate unique 6-char creator code
+// Helper: Generate unique 4-char creator code (2 letters + 2 digits)
 const generateCreatorCode = () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const digits = "0123456789";
+  const pick = (chars: string) =>
+    chars.charAt(Math.floor(Math.random() * chars.length));
+  return pick(letters) + pick(letters) + pick(digits) + pick(digits);
 };
 
 // Shared student creation logic

@@ -10,7 +10,3 @@ export interface BannerItem {
     isActive: boolean
 }
 
-export interface BannersConfig {
-    lastUpdated: string
-    banners: BannerItem[]
-}
