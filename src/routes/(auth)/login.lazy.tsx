@@ -1,7 +1,5 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
-import { GalleryVerticalEnd } from 'lucide-react'
 import { LoginForm } from '@/components/login-form'
-import background from '@/assets/auth-background.png'
 
 export const Route = createLazyFileRoute('/(auth)/login')({
   component: LoginComponent,
@@ -12,10 +10,7 @@ function LoginComponent() {
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
+          <a href="#" className="flex items-center gap-2 font-medium text-brand-green">
             realX
           </a>
         </div>
@@ -25,14 +20,7 @@ function LoginComponent() {
           </div>
         </div>
       </div>
-      <div className="relative hidden lg:block">
-        <img
-          src={background}
-          alt="Background"
-          className="absolute inset-0 h-full w-full object-contain"
-          loading="lazy"
-        />
-      </div>
+      <div className="relative hidden lg:block bg-brand-green" />
     </div>
   )
 }
