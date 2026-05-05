@@ -41,7 +41,7 @@ function NotificationsPage() {
     const { data: notifications, isLoading } = useQuery({
         queryKey: ['notifications'],
         queryFn: async () => {
-            const q = query(collection(db, 'notifications'), orderBy('sentAt', 'desc'), limit(50))
+            const q = query(collection(db, 'notifications'), orderBy('sentAt', 'desc'), limit(10))
             const snapshot = await getDocs(q)
             return snapshot.docs.map((doc) => ({
                 id: doc.id,

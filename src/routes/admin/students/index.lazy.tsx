@@ -48,6 +48,7 @@ interface Student {
     role: string
     creatorCode: string
     profilePicture?: string
+    cashback: number
 }
 
 function RouteComponent() {
@@ -116,6 +117,7 @@ function RouteComponent() {
                     role: data.role || 'student',
                     creatorCode: data.creatorCode || '----',
                     profilePicture: data.profilePicture || '',
+                    cashback: data.cashback || 0,
                 } as Student
             })
 
@@ -389,13 +391,14 @@ function RouteComponent() {
                             <TableHead className="text-foreground font-bold text-base">Contact Info</TableHead>
                             <TableHead className="text-foreground font-bold text-base">Role</TableHead>
                             <TableHead className="text-foreground font-bold text-base">Creator Code</TableHead>
+                            <TableHead className="text-foreground font-bold text-base">Cashback</TableHead>
                             <TableHead className="text-foreground font-bold text-base text-right pr-8">Actions:</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-10">
+                                <TableCell colSpan={7} className="text-center py-10">
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-green border-t-transparent" />
                                         <p className="text-muted-foreground font-medium">Loading students...</p>
@@ -404,7 +407,7 @@ function RouteComponent() {
                             </TableRow>
                         ) : studentList.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                                     No students found.
                                 </TableCell>
                             </TableRow>
@@ -433,6 +436,7 @@ function RouteComponent() {
                                         </span>
                                     </TableCell>
                                     <TableCell className="font-mono font-medium text-foreground tracking-widest">{student.creatorCode}</TableCell>
+                                    <TableCell className="font-medium text-foreground">${student.cashback.toFixed(2)}</TableCell>
                                     <TableCell className="text-right">
                                         <Link to="/admin/students/$studentId/settings" params={{ studentId: student.id }} search={{ page: 1, pageSize: 10 }}>
                                             <Button variant="outline" size="sm" className="rounded-full h-8 px-4 gap-1 text-xs font-semibold">
