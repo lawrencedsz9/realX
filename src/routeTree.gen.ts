@@ -44,6 +44,7 @@ import { Route as vendorPanelVendorTransactionHistoryTransactionIdRouteImport } 
 import { Route as AdminVendorsVendorIdSettingsIndexRouteImport } from './routes/admin/vendors/$vendorId.settings.index'
 import { Route as AdminVendorsVendorIdSettingsOffersRouteImport } from './routes/admin/vendors/$vendorId.settings.offers'
 import { Route as AdminVendorsVendorIdSettingsLocationRouteImport } from './routes/admin/vendors/$vendorId.settings.location'
+import { Route as AdminVendorsVendorIdSettingsInvoicesRouteImport } from './routes/admin/vendors/$vendorId.settings.invoices'
 import { Route as AdminVendorsVendorIdSettingsBrandingRouteImport } from './routes/admin/vendors/$vendorId.settings.branding'
 
 const AdminRoute = AdminRouteImport.update({
@@ -259,6 +260,12 @@ const AdminVendorsVendorIdSettingsLocationRoute =
     path: '/location',
     getParentRoute: () => AdminVendorsVendorIdSettingsRoute,
   } as any)
+const AdminVendorsVendorIdSettingsInvoicesRoute =
+  AdminVendorsVendorIdSettingsInvoicesRouteImport.update({
+    id: '/invoices',
+    path: '/invoices',
+    getParentRoute: () => AdminVendorsVendorIdSettingsRoute,
+  } as any)
 const AdminVendorsVendorIdSettingsBrandingRoute =
   AdminVendorsVendorIdSettingsBrandingRouteImport.update({
     id: '/branding',
@@ -299,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/admin/cms/trending-offers/': typeof AdminCmsTrendingOffersIndexRoute
   '/admin/cms/universities/': typeof AdminCmsUniversitiesIndexRoute
   '/admin/vendors/$vendorId/settings/branding': typeof AdminVendorsVendorIdSettingsBrandingRoute
+  '/admin/vendors/$vendorId/settings/invoices': typeof AdminVendorsVendorIdSettingsInvoicesRoute
   '/admin/vendors/$vendorId/settings/location': typeof AdminVendorsVendorIdSettingsLocationRoute
   '/admin/vendors/$vendorId/settings/offers': typeof AdminVendorsVendorIdSettingsOffersRoute
   '/admin/vendors/$vendorId/settings/': typeof AdminVendorsVendorIdSettingsIndexRoute
@@ -333,6 +341,7 @@ export interface FileRoutesByTo {
   '/admin/cms/trending-offers': typeof AdminCmsTrendingOffersIndexRoute
   '/admin/cms/universities': typeof AdminCmsUniversitiesIndexRoute
   '/admin/vendors/$vendorId/settings/branding': typeof AdminVendorsVendorIdSettingsBrandingRoute
+  '/admin/vendors/$vendorId/settings/invoices': typeof AdminVendorsVendorIdSettingsInvoicesRoute
   '/admin/vendors/$vendorId/settings/location': typeof AdminVendorsVendorIdSettingsLocationRoute
   '/admin/vendors/$vendorId/settings/offers': typeof AdminVendorsVendorIdSettingsOffersRoute
   '/admin/vendors/$vendorId/settings': typeof AdminVendorsVendorIdSettingsIndexRoute
@@ -372,6 +381,7 @@ export interface FileRoutesById {
   '/admin/cms/trending-offers/': typeof AdminCmsTrendingOffersIndexRoute
   '/admin/cms/universities/': typeof AdminCmsUniversitiesIndexRoute
   '/admin/vendors/$vendorId/settings/branding': typeof AdminVendorsVendorIdSettingsBrandingRoute
+  '/admin/vendors/$vendorId/settings/invoices': typeof AdminVendorsVendorIdSettingsInvoicesRoute
   '/admin/vendors/$vendorId/settings/location': typeof AdminVendorsVendorIdSettingsLocationRoute
   '/admin/vendors/$vendorId/settings/offers': typeof AdminVendorsVendorIdSettingsOffersRoute
   '/admin/vendors/$vendorId/settings/': typeof AdminVendorsVendorIdSettingsIndexRoute
@@ -411,6 +421,7 @@ export interface FileRouteTypes {
     | '/admin/cms/trending-offers/'
     | '/admin/cms/universities/'
     | '/admin/vendors/$vendorId/settings/branding'
+    | '/admin/vendors/$vendorId/settings/invoices'
     | '/admin/vendors/$vendorId/settings/location'
     | '/admin/vendors/$vendorId/settings/offers'
     | '/admin/vendors/$vendorId/settings/'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '/admin/cms/trending-offers'
     | '/admin/cms/universities'
     | '/admin/vendors/$vendorId/settings/branding'
+    | '/admin/vendors/$vendorId/settings/invoices'
     | '/admin/vendors/$vendorId/settings/location'
     | '/admin/vendors/$vendorId/settings/offers'
     | '/admin/vendors/$vendorId/settings'
@@ -483,6 +495,7 @@ export interface FileRouteTypes {
     | '/admin/cms/trending-offers/'
     | '/admin/cms/universities/'
     | '/admin/vendors/$vendorId/settings/branding'
+    | '/admin/vendors/$vendorId/settings/invoices'
     | '/admin/vendors/$vendorId/settings/location'
     | '/admin/vendors/$vendorId/settings/offers'
     | '/admin/vendors/$vendorId/settings/'
@@ -743,6 +756,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVendorsVendorIdSettingsLocationRouteImport
       parentRoute: typeof AdminVendorsVendorIdSettingsRoute
     }
+    '/admin/vendors/$vendorId/settings/invoices': {
+      id: '/admin/vendors/$vendorId/settings/invoices'
+      path: '/invoices'
+      fullPath: '/admin/vendors/$vendorId/settings/invoices'
+      preLoaderRoute: typeof AdminVendorsVendorIdSettingsInvoicesRouteImport
+      parentRoute: typeof AdminVendorsVendorIdSettingsRoute
+    }
     '/admin/vendors/$vendorId/settings/branding': {
       id: '/admin/vendors/$vendorId/settings/branding'
       path: '/branding'
@@ -755,6 +775,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminVendorsVendorIdSettingsRouteChildren {
   AdminVendorsVendorIdSettingsBrandingRoute: typeof AdminVendorsVendorIdSettingsBrandingRoute
+  AdminVendorsVendorIdSettingsInvoicesRoute: typeof AdminVendorsVendorIdSettingsInvoicesRoute
   AdminVendorsVendorIdSettingsLocationRoute: typeof AdminVendorsVendorIdSettingsLocationRoute
   AdminVendorsVendorIdSettingsOffersRoute: typeof AdminVendorsVendorIdSettingsOffersRoute
   AdminVendorsVendorIdSettingsIndexRoute: typeof AdminVendorsVendorIdSettingsIndexRoute
@@ -764,6 +785,8 @@ const AdminVendorsVendorIdSettingsRouteChildren: AdminVendorsVendorIdSettingsRou
   {
     AdminVendorsVendorIdSettingsBrandingRoute:
       AdminVendorsVendorIdSettingsBrandingRoute,
+    AdminVendorsVendorIdSettingsInvoicesRoute:
+      AdminVendorsVendorIdSettingsInvoicesRoute,
     AdminVendorsVendorIdSettingsLocationRoute:
       AdminVendorsVendorIdSettingsLocationRoute,
     AdminVendorsVendorIdSettingsOffersRoute:
