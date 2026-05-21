@@ -27,6 +27,7 @@ emulator-data
 .sfdx/
 
 # Scripts & Secrets (KEEP OUT OF GIT)
+scripts/
 realappx-firebase-adminsdk-*.json
 seed-firestore.js
 seed-vendor-techstore.js

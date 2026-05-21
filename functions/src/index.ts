@@ -20,6 +20,7 @@ const REGION = "me-central1";
 
 // Fields to include in the maps/locations cache document
 interface VendorMapEntry {
+  vendorId: string;
   name: string | null;
   nameAr: string | null;
   latitude: number;
@@ -27,6 +28,8 @@ interface VendorMapEntry {
   geohash: string;
   address: string | null;
   addressAr: string | null;
+  label: string;
+  isDefault: boolean;
   mainCategory: string | null;
   profilePicture: string | null;
 }
@@ -36,28 +39,58 @@ interface VendorMapEntry {
  * @param {FirebaseFirestore.DocumentData} data
  * @return {VendorMapEntry|null}
  */
-function buildMapEntry(
+function buildMapEntries(
+  vendorId: string,
   data: FirebaseFirestore.DocumentData,
-): VendorMapEntry | null {
-  const lat = data.latitude;
-  const lng = data.longitude;
-  if (
-    typeof lat !== "number" || isNaN(lat) ||
-    typeof lng !== "number" || isNaN(lng)
-  ) {
-    return null;
-  }
-  return {
+): VendorMapEntry[] {
+  const base = {
+    vendorId,
     name: data.name || null,
     nameAr: data.nameAr || null,
-    latitude: lat,
-    longitude: lng,
-    geohash: data.geohash || geohashForLocation([lat, lng]),
-    address: data.address || null,
-    addressAr: data.addressAr || null,
     mainCategory: data.mainCategory || null,
     profilePicture: data.profilePicture || null,
   };
+
+  // New array-based locations
+  if (Array.isArray(data.locations) && data.locations.length > 0) {
+    return data.locations
+      .map((loc: any, idx: number) => {
+        if (
+          typeof loc.latitude !== "number" || isNaN(loc.latitude) ||
+          typeof loc.longitude !== "number" || isNaN(loc.longitude)
+        ) return null;
+        return {
+          ...base,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          geohash: loc.geohash || geohashForLocation([loc.latitude, loc.longitude]),
+          address: loc.address || null,
+          addressAr: loc.addressAr || null,
+          label: loc.label || `Branch ${idx + 1}`,
+          isDefault: loc.isDefault ?? idx === 0,
+        };
+      })
+      .filter(Boolean) as VendorMapEntry[];
+  }
+
+  // Fallback: legacy flat fields
+  if (
+    typeof data.latitude === "number" && !isNaN(data.latitude) &&
+    typeof data.longitude === "number" && !isNaN(data.longitude)
+  ) {
+    return [{
+      ...base,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      geohash: data.geohash || geohashForLocation([data.latitude, data.longitude]),
+      address: data.address || null,
+      addressAr: data.addressAr || null,
+      label: "Main",
+      isDefault: true,
+    }];
+  }
+
+  return [];
 }
 
 // Helper: Generate unique 4-char creator code (2 letters + 2 digits)
@@ -819,56 +852,59 @@ export const registerPushToken = onCall(
 );
 
 export const backfillVendorGeohashes = onCall(
-  {region: REGION, cors: true},
+  { region: REGION, cors: true },
   async (request: CallableRequest) => {
-    const {auth} = request;
-
-    if (!auth) {
-      throw new HttpsError("unauthenticated", "User not authenticated");
-    }
-
-    if (!auth.token.admin) {
-      throw new HttpsError("permission-denied", "Admin access required");
-    }
+    const { auth } = request;
+    if (!auth) throw new HttpsError("unauthenticated", "User not authenticated");
+    if (!auth.token.admin) throw new HttpsError("permission-denied", "Admin access required");
 
     const db = getFirestore();
     const snapshot = await db.collection("vendors").get();
 
     let updatedCount = 0;
-    const BATCH_LIMIT = 500;
-    let batch = db.batch();
+    const batch = db.batch();
     let batchCount = 0;
 
     snapshot.forEach((doc) => {
       const data = doc.data();
-      const lat = data.latitude;
-      const lng = data.longitude;
+      const updates: any = {};
 
-      if (
-        typeof lat === "number" && !isNaN(lat) &&
-        typeof lng === "number" && !isNaN(lng) &&
+      // For array-based locations
+      if (Array.isArray(data.locations)) {
+        data.locations.forEach((loc, idx) => {
+          if (
+            typeof loc.latitude === "number" && !isNaN(loc.latitude) &&
+            typeof loc.longitude === "number" && !isNaN(loc.longitude) &&
+            !loc.geohash
+          ) {
+            updates[`locations.${idx}.geohash`] = geohashForLocation([loc.latitude, loc.longitude]);
+            updatedCount++;
+          }
+        });
+      } 
+      // Fallback for flat fields
+      else if (
+        typeof data.latitude === "number" && !isNaN(data.latitude) &&
+        typeof data.longitude === "number" && !isNaN(data.longitude) &&
         !data.geohash
       ) {
-        const hash = geohashForLocation([lat, lng]);
-        batch.update(doc.ref, {geohash: hash});
+        updates.geohash = geohashForLocation([data.latitude, data.longitude]);
         updatedCount++;
-        batchCount++;
+      }
 
-        if (batchCount >= BATCH_LIMIT) {
+      if (Object.keys(updates).length > 0) {
+        batch.update(doc.ref, updates);
+        batchCount++;
+        if (batchCount >= 500) {
           batch.commit();
-          batch = db.batch();
           batchCount = 0;
         }
       }
     });
 
-    if (batchCount > 0) {
-      await batch.commit();
-    }
-
-    logger.info("Geohash backfill complete", {updatedCount});
-
-    return {success: true, updatedCount};
+    if (batchCount > 0) await batch.commit();
+    logger.info("Geohash backfill complete", { updatedCount });
+    return { success: true, updatedCount };
   }
 );
 
@@ -884,34 +920,34 @@ export const onVendorWrite = onDocumentWritten(
     const db = getFirestore();
     const locationsRef = db.collection("maps").doc("locations");
 
-    // Vendor was deleted or has no data
     if (!event.data?.after?.exists) {
-      await locationsRef.set(
-        {[vendorId]: FieldValue.delete()},
-        {merge: true},
-      );
+      // Delete up to 10 possible location slots for this vendor
+      const deletions: Record<string, any> = {};
+      for (let i = 0; i < 10; i++) {
+        deletions[`${vendorId}_${i}`] = FieldValue.delete();
+      }
+      await locationsRef.set(deletions, {merge: true});
       logger.info("Removed vendor from locations cache", {vendorId});
       return;
     }
 
     const data = event.data.after.data();
     if (!data) return;
-    const entry = buildMapEntry(data);
 
-    if (entry) {
-      await locationsRef.set(
-        {[vendorId]: entry},
-        {merge: true},
-      );
-      logger.info("Updated vendor in locations cache", {vendorId});
-    } else {
-      // Vendor exists but isn't mappable (inactive or no coordinates)
-      await locationsRef.set(
-        {[vendorId]: FieldValue.delete()},
-        {merge: true},
-      );
-      logger.info("Removed unmappable vendor from locations cache", {vendorId});
+    const entries = buildMapEntries(vendorId, data);
+    const updates: Record<string, any> = {};
+
+    entries.forEach((entry, idx) => {
+      updates[`${vendorId}_${idx}`] = entry;
+    });
+
+    // Clear any old slots beyond current count
+    for (let i = entries.length; i < 10; i++) {
+      updates[`${vendorId}_${i}`] = FieldValue.delete();
     }
+
+    await locationsRef.set(updates, {merge: true});
+    logger.info("Updated vendor locations in cache", {vendorId, count: entries.length});
   },
 );
 
@@ -924,32 +960,26 @@ export const rebuildLocationsCache = onCall(
   async (request: CallableRequest) => {
     const {auth} = request;
 
-    if (!auth) {
-      throw new HttpsError("unauthenticated", "User not authenticated");
-    }
-
-    if (!auth.token.admin) {
-      throw new HttpsError("permission-denied", "Admin access required");
-    }
+    if (!auth) throw new HttpsError("unauthenticated", "User not authenticated");
+    if (!auth.token.admin) throw new HttpsError("permission-denied", "Admin access required");
 
     const db = getFirestore();
     const snapshot = await db.collection("vendors").get();
 
-    const vendors: Record<string, VendorMapEntry> = {};
+    const allEntries: Record<string, VendorMapEntry> = {};
     let count = 0;
 
     snapshot.forEach((doc) => {
-      const entry = buildMapEntry(doc.data());
-      if (entry) {
-        vendors[doc.id] = entry;
+      const entries = buildMapEntries(doc.id, doc.data());
+      entries.forEach((entry, idx) => {
+        allEntries[`${doc.id}_${idx}`] = entry;
         count++;
-      }
+      });
     });
 
-    await db.collection("maps").doc("locations").set({vendors});
+    await db.collection("maps").doc("locations").set(allEntries);
 
-    logger.info("Locations cache rebuilt", {vendorCount: count});
-
-    return {success: true, vendorCount: count};
+    logger.info("Locations cache rebuilt", {locationCount: count});
+    return {success: true, locationCount: count};
   },
 );
